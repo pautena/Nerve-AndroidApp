@@ -98,7 +98,7 @@ public class MeteorListener implements MeteorCallback {
 
                     Log.d(TAG, "document: " + document);
 
-                    String songId = (String) document.getField("song");
+                    String songId = (String) document.getField("songId");
                     String singer1Id = (String) document.getField("singer1");
                     String singer2Id = (String) document.getField("singer2");
 

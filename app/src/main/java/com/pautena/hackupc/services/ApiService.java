@@ -33,7 +33,10 @@ public interface ApiService {
 
     @FormUrlEncoded
     @POST("rooms")
-    Call<JsonObject> createRoom(@Field("song") String song, @Field("singer1") String userId);
+    Call<JsonObject> createRoom(@Field("songTitle") String songTitle,
+                                @Field("songArtist") String songArtist,
+                                @Field("songId") String songId,
+                                @Field("singer1") String userId);
 
     @FormUrlEncoded
     @POST("methods/requestPartner")

@@ -209,7 +209,7 @@ public class ApiServiceAdapter {
 
     public void createRoom(final Song song, final String singer1Id, final CreateRoomCallback callback) {
 
-        Call<JsonObject> call = service.createRoom(song.getId(), singer1Id);
+        Call<JsonObject> call = service.createRoom(song.getTitle(), song.getAuthor(), song.getId(), singer1Id);
 
         call.enqueue(new Callback<JsonObject>() {
             @Override

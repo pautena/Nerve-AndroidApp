@@ -2,21 +2,19 @@ package com.pautena.hackupc.ui.twillio.activity;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,11 +39,9 @@ import com.pautena.hackupc.ui.twillio.fragments.SongSelectionFragment;
 import com.pautena.hackupc.ui.twillio.fragments.StartOrJoinFragment;
 import com.pautena.hackupc.ui.twillio.fragments.WaitForStartFragment;
 import com.pautena.hackupc.ui.twillio.listeners.MeteorListener;
+import com.pautena.hackupc.ui.twillio.utils.ViewCapturer;
 import com.pautena.hackupc.utils.SongPlayer;
-import com.twilio.video.RoomState;
-import com.twilio.video.VideoRenderer;
-import com.twilio.video.TwilioException;
-import com.pautena.hackupc.ui.twillio.dialog.Dialog;
+import com.plattysoft.leonids.ParticleSystem;
 import com.twilio.video.AudioTrack;
 import com.twilio.video.CameraCapturer;
 import com.twilio.video.CameraCapturer.CameraSource;
@@ -56,17 +52,17 @@ import com.twilio.video.LocalVideoTrack;
 import com.twilio.video.Media;
 import com.twilio.video.Participant;
 import com.twilio.video.Room;
+import com.twilio.video.RoomState;
+import com.twilio.video.TwilioException;
 import com.twilio.video.VideoClient;
+import com.twilio.video.VideoRenderer;
 import com.twilio.video.VideoTrack;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import im.delight.android.ddp.Meteor;
-import im.delight.android.ddp.MeteorCallback;
 import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.db.Document;
-import im.delight.android.ddp.db.memory.InMemoryDatabase;
 import io.realm.Realm;
 
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
@@ -108,7 +104,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
      * Android application UI elements
      */
     private TextView videoStatusTextView;
-    private CameraCapturer cameraCapturer;
+    //private CameraCapturer cameraCapturer;
+    private ViewCapturer viewCapturer;
     private LocalMedia localMedia;
     private LocalAudioTrack localAudioTrack;
     private LocalVideoTrack localVideoTrack;
@@ -135,6 +132,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private WaitForStartFragment waitForStartFragment;
     private PlayingFragment playingFragment;
     private RequestFragment requestFragment;
+    private RelativeLayout rootContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,7 +147,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         songPlayer = new SongPlayer(this, primaryVideoView);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
-
+        rootContainer = (RelativeLayout) findViewById(R.id.video_container);
 
         /*
          * Enable changing the volume using the up/down keys during a conversation
@@ -174,6 +172,23 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         /*
         Connect to meteor database
          */
+        meteorConfig();
+
+        //Show start fragment
+        showStartFragment();
+
+        /*Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                rainConfetti();
+                //rainSnow();
+
+            }
+        }, 1000);*/
+    }
+
+    private void meteorConfig() {
         // create a new instance
         mMeteor = MeteorSingleton.getInstance();
 
@@ -182,9 +197,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         // establish the connection
         mMeteor.connect();
-
-        //Show start fragment
-        showStartFragment();
     }
 
     @Override
@@ -216,7 +228,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * If the local video track was removed when the app was put in the background, add it back.
          */
         if (localMedia != null && localVideoTrack == null) {
-            localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
+            //localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
+            localVideoTrack = localMedia.addVideoTrack(true, viewCapturer);
             localVideoTrack.addRenderer(localVideoView);
         }
     }
@@ -288,8 +301,12 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         localAudioTrack = localMedia.addAudioTrack(true);
 
         // Share your camera
-        cameraCapturer = new CameraCapturer(this, CameraSource.FRONT_CAMERA);
-        localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
+        //cameraCapturer = new CameraCapturer(this, CameraSource.FRONT_CAMERA);
+        //localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
+
+        viewCapturer = new ViewCapturer(this, ViewCapturer.FRONT_CAMERA);
+        localVideoTrack = localMedia.addVideoTrack(true, viewCapturer);
+
         primaryVideoView.setMirror(true);
         localVideoTrack.addRenderer(primaryVideoView);
         localVideoView = primaryVideoView;
@@ -362,10 +379,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * This app only displays video for one additional participant per Room
          */
         if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
-            Snackbar.make(this.primaryVideoView,
-                    "Multiple participants are not currently support in this UI",
-                    Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
             return;
         }
         participantIdentity = participant.getIdentity();
@@ -399,8 +412,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localVideoTrack.removeRenderer(primaryVideoView);
             localVideoTrack.addRenderer(thumbnailVideoView);
             localVideoView = thumbnailVideoView;
-            thumbnailVideoView.setMirror(cameraCapturer.getCameraSource() ==
-                    CameraSource.FRONT_CAMERA);
+            //TODO: thumbnailVideoView.setMirror(cameraCapturer.getCameraSource() == CameraSource.FRONT_CAMERA);
         }
     }
 
@@ -433,8 +445,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             thumbnailVideoView.setVisibility(View.GONE);
             localVideoTrack.addRenderer(primaryVideoView);
             localVideoView = primaryVideoView;
-            primaryVideoView.setMirror(cameraCapturer.getCameraSource() ==
-                    CameraSource.FRONT_CAMERA);
+            //TODO primaryVideoView.setMirror(cameraCapturer.getCameraSource() == CameraSource.FRONT_CAMERA);
         }
     }
 
@@ -729,7 +740,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onSwitchCamera() {
-        if (cameraCapturer != null) {
+        /*TODO if (cameraCapturer != null) {
             CameraSource cameraSource = cameraCapturer.getCameraSource();
             cameraCapturer.switchCamera();
             if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
@@ -737,7 +748,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             } else {
                 primaryVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
             }
-        }
+        }*/
     }
 
     @Override
@@ -799,5 +810,35 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         connectToRoom(videoRoom.getId());
         showWaitForStartFragment(master);
+    }
+
+    private void rainSnow() {
+
+        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 0, 90)
+                .setRotationSpeed(144)
+                .oneShot(findViewById(R.id.emiter_top_left), 20);
+
+
+        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 90, 180)
+                .setRotationSpeed(144)
+                .oneShot(findViewById(R.id.emiter_top_right), 20);
+    }
+
+    private void rainConfetti() {
+
+        new ParticleSystem(this, 60, R.drawable.confeti2, 10000)
+                .setSpeedModuleAndAngleRange(0.4f, 0.9f, 0, 90)
+                .setRotationSpeed(144)
+                .setAcceleration(0.00005f, 90)
+                .emit(findViewById(R.id.emiter_top_left), 60);
+
+
+        new ParticleSystem(this, 60, R.drawable.confeti3, 10000)
+                .setSpeedModuleAndAngleRange(0.4f, 0.9f, 90, 180)
+                .setRotationSpeed(144)
+                .setAcceleration(0.00005f, 90)
+                .emit(findViewById(R.id.emiter_top_right), 60);
     }
 }

@@ -3,7 +3,6 @@ package com.pautena.hackupc.ui;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -11,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.RelativeLayout;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -21,8 +21,6 @@ import com.pautena.hackupc.services.ApiServiceAdapter;
 import com.pautena.hackupc.services.callback.FinishGetFriendsCallback;
 import com.pautena.hackupc.ui.login.LoginActivity;
 import com.pautena.hackupc.ui.twillio.activity.VideoActivity;
-import com.pautena.hackupc.ui.twillio.adapters.FriendSelectionAdapter;
-import com.pautena.hackupc.ui.twillio.fragments.SelectFriendFragment;
 import com.pautena.hackupc.utils.SongLoader;
 
 import java.util.ArrayList;
@@ -46,6 +44,7 @@ public class SplashScreen extends AppCompatActivity {
 
     private int runDelay;
     private int runSmallDelay;
+    private RelativeLayout root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +64,8 @@ public class SplashScreen extends AppCompatActivity {
         user = UserManager.getInstance(this).getMainUser(realm);
         MeteorSingleton.createInstance(this, "http://www.nerve.gq/websocket", new InMemoryDatabase());
 
+        root = (RelativeLayout) findViewById(R.id.root);
+
         ApiServiceAdapter.getInstance(this).getAllUsers(new FinishGetFriendsCallback() {
             @Override
             public void onFinishGetFriends() {
@@ -74,7 +75,6 @@ public class SplashScreen extends AppCompatActivity {
                 }
             }
         });
-
 
     }
 
