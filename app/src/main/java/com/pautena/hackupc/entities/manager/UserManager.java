@@ -1,6 +1,7 @@
 package com.pautena.hackupc.entities.manager;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.pautena.hackupc.entities.User;
@@ -12,6 +13,8 @@ import io.realm.Realm;
  * Created by pautenavidal on 2/3/17.
  */
 public class UserManager {
+    private static final String TAG = UserManager.class.getSimpleName();
+
     private static UserManager instance;
     private final Context context;
 
@@ -28,7 +31,11 @@ public class UserManager {
     }
 
     public User getMainUser(Realm realm) {
-        return realm.where(User.class).findFirst();
+        User user = realm.where(User.class).findFirst();
+
+        Log.d(TAG, "user: " + user);
+
+        return user;
     }
 
     public void login(Realm realm, String username, String password) {
@@ -52,10 +59,17 @@ public class UserManager {
         String firebaseToken = FirebaseInstanceId.getInstance().getToken();
         user.setFirebaseToken(firebaseToken);
 
+
+        Log.d(TAG, "createMainUser. user: " + user);
+
         return user;
     }
 
     public void register(String email, String username, String password, String checkPassword) {
         ApiServiceAdapter.getInstance(context).register(email, username, password, checkPassword);
+    }
+
+    public void logout(Realm realm) {
+        realm.delete(User.class);
     }
 }

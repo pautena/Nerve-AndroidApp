@@ -10,18 +10,26 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.pautena.hackupc.R;
 import com.pautena.hackupc.entities.User;
 import com.pautena.hackupc.entities.manager.UserManager;
+import com.pautena.hackupc.services.ApiServiceAdapter;
+import com.pautena.hackupc.services.callback.FinishGetFriendsCallback;
 import com.pautena.hackupc.ui.login.LoginActivity;
 import com.pautena.hackupc.ui.twillio.activity.VideoActivity;
+import com.pautena.hackupc.ui.twillio.adapters.FriendSelectionAdapter;
+import com.pautena.hackupc.ui.twillio.fragments.SelectFriendFragment;
 import com.pautena.hackupc.utils.SongLoader;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import im.delight.android.ddp.MeteorSingleton;
+import im.delight.android.ddp.db.memory.InMemoryDatabase;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 
@@ -29,7 +37,9 @@ public class SplashScreen extends AppCompatActivity {
     private final static String TAG = SplashScreen.class.getSimpleName();
     private static final int MY_PERMISSIONS_REQUEST = 1;
 
-    static{ System.loadLibrary("opencv_java3"); }
+    static {
+        System.loadLibrary("opencv_java3");
+    }
 
     private Realm realm;
     private User user;
@@ -43,6 +53,9 @@ public class SplashScreen extends AppCompatActivity {
         setContentView(R.layout.activity_splash_screen);
         setupRealm();
 
+        String firebaseToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "firebaseToken: " + firebaseToken);
+
         realm = Realm.getDefaultInstance();
         runDelay = getResources().getInteger(R.integer.splash_screen_delay);
         runSmallDelay = getResources().getInteger(R.integer.splash_screen_small_delay);
@@ -50,11 +63,19 @@ public class SplashScreen extends AppCompatActivity {
         new SongLoader().load(realm);
         FirebaseApp.initializeApp(this);
         user = UserManager.getInstance(this).getMainUser(realm);
+        MeteorSingleton.createInstance(this, "http://www.nerve.gq/websocket", new InMemoryDatabase());
+
+        ApiServiceAdapter.getInstance(this).getAllUsers(new FinishGetFriendsCallback() {
+            @Override
+            public void onFinishGetFriends() {
+                Log.d(TAG, "all users loaded");
+                if (!requestPermissions()) {
+                    nextActivity(runDelay);
+                }
+            }
+        });
 
 
-        if (!requestPermissions()) {
-            nextActivity(runDelay);
-        }
     }
 
     private void setupRealm() {

@@ -38,7 +38,8 @@
             android:layout_gravity="center"
             android:text="@string/room_status"
             android:textColor="@color/colorAccent"
-            android:textSize="20sp" />
+            android:textSize="20sp"
+            android:visibility="invisible" />
 
     </LinearLayout>
 

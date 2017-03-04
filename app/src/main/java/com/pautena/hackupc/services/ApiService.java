@@ -28,8 +28,8 @@ public interface ApiService {
                            @Field("password") String password);
 
     @FormUrlEncoded
-    @PUT("methods/setPushNotificationsToken")
-    Call<JsonObject> updateUserFirebaseToken(@Field("partnerId") String userId, @Field("firebase_token") String firebaseToken);
+    @POST("methods/setPushNotificationsToken")
+    Call<JsonObject> updateUserFirebaseToken(@Field("token") String firebaseToken);
 
     @FormUrlEncoded
     @POST("rooms")

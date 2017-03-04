@@ -35,5 +35,7 @@
     <string name="start">Start</string>
     <string name="wait_for_participant">Esperando que tu amigo accepte la peticion</string>
     <string name="wait_for_start">Dale a empezar para poder cantar!</string>
+    <string name="new_request">El usuario %1$s te ha invitado a unirte a cantar la canción %2$s</string>
+    <string name="wait_for_start_no_master">Espera a que el otro jugador le de a empezar</string>
 
 </resources>

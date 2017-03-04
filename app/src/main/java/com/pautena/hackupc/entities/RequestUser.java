@@ -14,9 +14,10 @@ public class RequestUser extends RealmObject {
     private String email;
     private String username;
 
-    public RequestUser(){}
+    public RequestUser() {
+    }
 
-    public RequestUser(String id, String email, String username) {
+    public RequestUser(String id, String username, String email) {
         this.id = id;
         this.email = email;
         this.username = username;

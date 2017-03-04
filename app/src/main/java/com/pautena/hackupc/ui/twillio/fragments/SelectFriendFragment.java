@@ -84,11 +84,12 @@ public class SelectFriendFragment extends Fragment implements FriendSelectionAda
         mLayoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.addItemDecoration(new SimpleDividerItemDecoration(getActivity()));
+        recyclerView.setAdapter(FriendSelectionAdapter.newInstance(getActivity(),realm, SelectFriendFragment.this));
 
         ApiServiceAdapter.getInstance(getActivity()).getAllUsers(new FinishGetFriendsCallback() {
             @Override
             public void onFinishGetFriends() {
-                recyclerView.setAdapter(FriendSelectionAdapter.newInstance(realm, SelectFriendFragment.this));
+                recyclerView.setAdapter(FriendSelectionAdapter.newInstance(getActivity(),realm, SelectFriendFragment.this));
             }
         });
 

@@ -34,11 +34,13 @@ public class WaitForStartFragment extends Fragment {
 
     private WaitForStartCallback callback = emptyCalblack;
     private static final String ARG_HAVE_PARTICIPANT = "argHaveParticipant";
+    private static final String ARG_MASTER = "argMaster";
 
-    public static WaitForStartFragment newInstance(Participant participant) {
+    public static WaitForStartFragment newInstance(Participant participant, boolean master) {
 
         Bundle args = new Bundle();
         args.putBoolean(ARG_HAVE_PARTICIPANT, participant != null);
+        args.putBoolean(ARG_MASTER, master);
 
         WaitForStartFragment fragment = new WaitForStartFragment();
         fragment.setArguments(args);
@@ -60,18 +62,22 @@ public class WaitForStartFragment extends Fragment {
     private Button startButton;
     private TextView titleTextView;
     private boolean haveParticipant;
+    private boolean master;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.wait_for_start, container, false);
+        View view = inflater.inflate(R.layout.wait_for_start_fragment, container, false);
 
         startButton = (Button) view.findViewById(R.id.start_button);
         titleTextView = (TextView) view.findViewById(R.id.title);
 
         haveParticipant = getArguments().getBoolean(ARG_HAVE_PARTICIPANT);
+        master = getArguments().getBoolean(ARG_MASTER);
+
 
         setHaveParticipant(haveParticipant);
+        setWaitingMessageNoMaster();
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,15 +91,25 @@ public class WaitForStartFragment extends Fragment {
     }
 
     public void setHaveParticipant(boolean haveParticipant) {
-        Log.d(TAG, "setHaveParticipant. haveParticipant: " + haveParticipant);
+        if (master) {
+            Log.d(TAG, "setHaveParticipant. haveParticipant: " + haveParticipant);
 
-        this.haveParticipant = haveParticipant;
-        if (haveParticipant) {
-            titleTextView.setText(R.string.wait_for_start);
-        } else {
-            titleTextView.setText(R.string.wait_for_participant);
+            this.haveParticipant = haveParticipant;
+            if (haveParticipant) {
+                titleTextView.setText(R.string.wait_for_start);
+            } else {
+                titleTextView.setText(R.string.wait_for_participant);
+            }
+
+            startButton.setEnabled(haveParticipant);
         }
+    }
 
-        //TODO: remove comment - >startButton.setEnabled(haveParticipant);
+    public void setWaitingMessageNoMaster() {
+        if (!master) {
+
+            titleTextView.setText(R.string.wait_for_start_no_master);
+            startButton.setVisibility(View.GONE);
+        }
     }
 }

@@ -35,10 +35,12 @@ import com.pautena.hackupc.services.callback.RequestJoinCallback;
 import com.pautena.hackupc.ui.twillio.customviews.MyPrimaryVideoView;
 import com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView;
 import com.pautena.hackupc.ui.twillio.fragments.PlayingFragment;
+import com.pautena.hackupc.ui.twillio.fragments.RequestFragment;
 import com.pautena.hackupc.ui.twillio.fragments.SelectFriendFragment;
 import com.pautena.hackupc.ui.twillio.fragments.SongSelectionFragment;
 import com.pautena.hackupc.ui.twillio.fragments.StartOrJoinFragment;
 import com.pautena.hackupc.ui.twillio.fragments.WaitForStartFragment;
+import com.pautena.hackupc.ui.twillio.listeners.MeteorListener;
 import com.pautena.hackupc.utils.SongPlayer;
 import com.twilio.video.RoomState;
 import com.twilio.video.VideoRenderer;
@@ -57,13 +59,20 @@ import com.twilio.video.Room;
 import com.twilio.video.VideoClient;
 import com.twilio.video.VideoTrack;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import im.delight.android.ddp.Meteor;
+import im.delight.android.ddp.MeteorCallback;
+import im.delight.android.ddp.MeteorSingleton;
+import im.delight.android.ddp.db.Document;
+import im.delight.android.ddp.db.memory.InMemoryDatabase;
 import io.realm.Realm;
 
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
         SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
-        WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback {
+        WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback,
+        RequestFragment.RequestFragmentCallback {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -79,10 +88,14 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
      */
     private VideoClient videoClient;
 
+    private Meteor mMeteor;
+
     /*
      * A Room represents communication between the client and one or more participants.
      */
     private Room room;
+
+    private boolean inRoom = false;
 
     /*
      * A VideoView receives frames from a local or remote video track and renders them
@@ -121,6 +134,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private Participant participant;
     private WaitForStartFragment waitForStartFragment;
     private PlayingFragment playingFragment;
+    private RequestFragment requestFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,6 +171,19 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             createVideoClient();
         }
 
+        /*
+        Connect to meteor database
+         */
+        // create a new instance
+        mMeteor = MeteorSingleton.getInstance();
+
+        // register the callback that will handle events and receive messages
+        mMeteor.addCallback(new MeteorListener(this, realm, user, mMeteor));
+
+        // establish the connection
+        mMeteor.connect();
+
+        //Show start fragment
         showStartFragment();
     }
 
@@ -304,6 +331,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     }
 
     private void connectToRoom(String roomName) {
+        inRoom = true;
         setAudioFocus(true);
         ConnectOptions connectOptions = new ConnectOptions.Builder()
                 .roomName(roomName)
@@ -592,16 +620,29 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
                 .commit();
     }
 
-    private void showWaitForStartFragment() {
+    private void showWaitForStartFragment(boolean master) {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
 
-        waitForStartFragment = WaitForStartFragment.newInstance(participant);
+        waitForStartFragment = WaitForStartFragment.newInstance(participant, master);
 
         fragmentManager.beginTransaction()
                 .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
                 .replace(R.id.container, waitForStartFragment, WaitForStartFragment.TAG)
                 .addToBackStack(WaitForStartFragment.TAG)
+                .commit();
+    }
+
+    private void showRequestFragment(VideoRoom room) {
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+
+        requestFragment = RequestFragment.newInstance(room);
+
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
+                .replace(R.id.container, requestFragment, RequestFragment.TAG)
+                .addToBackStack(RequestFragment.TAG)
                 .commit();
     }
 
@@ -642,9 +683,11 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         showSelectFriendFragment();
     }
 
-    private void playSong(Song song) {
-        Log.d(TAG, "playSong. song: " + song);
+    public void playSong() {
+        Song song = videoRoom.getSong();
+        Log.d(TAG, "playSong(master:" + master + "). song: " + song);
         songPlayer.play(song);
+        showPlayingFragment();
     }
 
     @Override
@@ -658,7 +701,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             }
         });
 
-        showWaitForStartFragment();
+        showWaitForStartFragment(master);
     }
 
     @Override
@@ -671,8 +714,17 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     @Override
     public void onStartSing() {
         Log.d(TAG, "onStartSing");
-        playSong(song);
-        showPlayingFragment();
+
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", videoRoom.getId());
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("start", "true");
+
+        Map<String, Object> set = new HashMap<>();
+        set.put("$set", values);
+
+        mMeteor.update("rooms", query, set);
     }
 
     @Override
@@ -720,5 +772,32 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             return enable;
         }
         return true;
+    }
+
+    public void onRequestReceived(VideoRoom room) {
+        this.videoRoom = room;
+
+        if (!inRoom) {
+            Log.d(TAG, "videoRoom. song: " + room.getSong().getTitle());
+            showRequestFragment(room);
+        }
+    }
+
+    @Override
+    public void onAcceptRequest(VideoRoom videoRoom) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", videoRoom.getId());
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("accepted", true);
+
+        Map<String, Object> set = new HashMap<>();
+        set.put("$set", values);
+
+
+        mMeteor.update("rooms", query, set);
+
+        connectToRoom(videoRoom.getId());
+        showWaitForStartFragment(master);
     }
 }

@@ -1,5 +1,6 @@
 package com.pautena.hackupc.ui.twillio.adapters;
 
+import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -11,6 +12,8 @@ import android.widget.TextView;
 import com.pautena.hackupc.R;
 import com.pautena.hackupc.entities.RequestUser;
 import com.pautena.hackupc.entities.Song;
+import com.pautena.hackupc.entities.User;
+import com.pautena.hackupc.entities.manager.UserManager;
 
 import io.realm.OrderedRealmCollection;
 import io.realm.Realm;
@@ -28,9 +31,14 @@ public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser
         void onSelectItem(RequestUser requestUser);
     }
 
-    public static FriendSelectionAdapter newInstance(Realm realm, FriendSelectionAdapterListener listener) {
+    public static FriendSelectionAdapter newInstance(Context context, Realm realm, FriendSelectionAdapterListener listener) {
 
-        RealmResults<RequestUser> requestUsers = realm.where(RequestUser.class).findAll();
+        User mainUser = UserManager.getInstance(context).getMainUser(realm);
+
+        RealmResults<RequestUser> requestUsers = realm
+                .where(RequestUser.class)
+                .notEqualTo("id", mainUser.getId())
+                .findAll();
 
         return new FriendSelectionAdapter(requestUsers, true, listener);
     }

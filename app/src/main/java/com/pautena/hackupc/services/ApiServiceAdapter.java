@@ -82,6 +82,7 @@ public class ApiServiceAdapter {
 
         if (user != null && user.hasToken()) {
             final String token = user.getServerToken();
+            Log.d(TAG, "insert token: " + token);
             httpBuilder.addInterceptor(new Interceptor() {
                 @Override
                 public okhttp3.Response intercept(Chain chain) throws IOException {
@@ -113,14 +114,15 @@ public class ApiServiceAdapter {
     }
 
     private void printResponse(String title, Response response) {
-        if (response.isSuccessful()) {
-            Log.d(TAG, title + " -> response(" + response.code() + "): " + response.body());
-        } else {
-            try {
+        try {
+            if (response.isSuccessful()) {
+                Log.d(TAG, title + " -> response(" + response.code() + "): " + response.body());
+            } else {
                 Log.e(TAG, title + " -> response(" + response.code() + "): " + response.errorBody().string());
-            } catch (IOException e) {
-                e.printStackTrace();
+
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -176,41 +178,31 @@ public class ApiServiceAdapter {
                     realm.commitTransaction();
                     initializeRetrofit();
 
-                    updateFirebseToken(user);
 
+                    Intent localIntent = new Intent(BROADCAST_FINISH_LOGIN);
+                    localIntent.putExtra(BROADCAST_ARG_CODE, response.code());
+                    LocalBroadcastManager.getInstance(context).sendBroadcast(localIntent);
+
+                } else {
+
+                    realm.beginTransaction();
+                    UserManager.getInstance(context).logout(realm);
+                    realm.commitTransaction();
                 }
-
-                Intent localIntent = new Intent(BROADCAST_FINISH_LOGIN);
-                localIntent.putExtra(BROADCAST_ARG_CODE, response.code());
-                LocalBroadcastManager.getInstance(context).sendBroadcast(localIntent);
             }
 
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
                 Log.e(TAG, "error: " + t.getMessage());
+
+
+                realm.beginTransaction();
+                UserManager.getInstance(context).logout(realm);
+                realm.commitTransaction();
 
                 Intent localIntent = new Intent(BROADCAST_FINISH_LOGIN);
                 localIntent.putExtra(BROADCAST_ARG_CODE, BROADCAST_ERROR_CODE);
                 LocalBroadcastManager.getInstance(context).sendBroadcast(localIntent);
-            }
-        });
-    }
-
-    public void updateFirebseToken(User user) {
-
-        Call<JsonObject> call = service.updateUserFirebaseToken(user.getId(), user.getFirebaseToken());
-
-        call.enqueue(new Callback<JsonObject>() {
-            @Override
-            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                printResponse("updateFirebseToken", response);
-
-            }
-
-            @Override
-            public void onFailure(Call<JsonObject> call, Throwable t) {
-                Log.e(TAG, "error: " + t.getMessage());
-
             }
         });
     }
@@ -321,6 +313,7 @@ public class ApiServiceAdapter {
                                                      object.get("username").getAsString(),
                                                      object.getAsJsonArray("emails").get(0).getAsJsonObject().get("address").getAsString());
 
+                                             Log.d(TAG, "requestUser: " + requestUser);
                                              requestUsers.add(requestUser);
                                          }
 
