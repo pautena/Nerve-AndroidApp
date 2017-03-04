@@ -3,6 +3,7 @@ package com.pautena.hackupc.ui;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -15,7 +16,7 @@ import com.pautena.hackupc.R;
 import com.pautena.hackupc.entities.User;
 import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.ui.login.LoginActivity;
-import com.pautena.hackupc.ui.main.MainActivity;
+import com.pautena.hackupc.ui.twillio.activity.VideoActivity;
 import com.pautena.hackupc.utils.SongLoader;
 
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ import io.realm.RealmConfiguration;
 public class SplashScreen extends AppCompatActivity {
     private final static String TAG = SplashScreen.class.getSimpleName();
     private static final int MY_PERMISSIONS_REQUEST = 1;
+
+    static{ System.loadLibrary("opencv_java3"); }
 
     private Realm realm;
     private User user;
@@ -114,7 +117,7 @@ public class SplashScreen extends AppCompatActivity {
             public void run() {
                 Intent intent;
                 if (user != null) {
-                    intent = new Intent(SplashScreen.this, MainActivity.class);
+                    intent = new Intent(SplashScreen.this, VideoActivity.class);
                 } else {
                     intent = new Intent(SplashScreen.this, LoginActivity.class);
                 }

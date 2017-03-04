@@ -1,9 +1,12 @@
 package com.pautena.hackupc.ui.twillio.customviews;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -33,6 +36,7 @@ public class MyPrimaryVideoView extends VideoView {
     private int lyricsTextSize;
 
     private Filter filter;
+    private Typeface textTypeFace;
 
     public MyPrimaryVideoView(Context context) {
         super(context);
@@ -55,6 +59,10 @@ public class MyPrimaryVideoView extends VideoView {
 
         numberTextSize = getContext().getResources().getInteger(R.integer.primary_video_number_size);
         lyricsTextSize = getContext().getResources().getInteger(R.integer.primary_video_lyrics_size);
+
+        AssetManager assetManager = getContext().getAssets();
+        Typeface plain = Typeface.createFromAsset(assetManager, "LuckiestGuy.ttf");
+        textTypeFace = Typeface.create(plain, 1);
 
     }
 
@@ -110,9 +118,11 @@ public class MyPrimaryVideoView extends VideoView {
         canvas.getClipBounds(r);
 
         Paint paint = new Paint();
+        paint.setTypeface(textTypeFace);
         paint.setColor(numberColor);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(numberTextSize);
+
         paint.getTextBounds(text, 0, text.length(), r);
 
 
@@ -121,6 +131,17 @@ public class MyPrimaryVideoView extends VideoView {
         int x = canvas.getWidth() / 2;
         int y = canvas.getHeight() / 2 + r.height() / 2;
         canvas.drawText(text, x, y, paint);
+
+
+        //STROKE
+        Paint stkPaint = new Paint();
+        stkPaint.setTypeface(textTypeFace);
+        stkPaint.setStyle(Paint.Style.STROKE);
+        stkPaint.setStrokeWidth(5);
+        stkPaint.setTextAlign(Paint.Align.CENTER);
+        stkPaint.setTextSize(numberTextSize);
+        stkPaint.setColor(Color.BLACK);
+        canvas.drawText(text, x, y, stkPaint);
     }
 
     private void writeLyricLine(int index, Canvas canvas, String line) {
@@ -128,10 +149,21 @@ public class MyPrimaryVideoView extends VideoView {
         int y = canvas.getHeight() - 300 + lyricLineSeparation * index;
 
         Paint paint = new Paint();
+        paint.setTypeface(textTypeFace);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setColor(lyricsColor);
         paint.setTextSize(lyricsTextSize);
         canvas.drawText(line, x, y, paint);
+
+        //STROKE
+        Paint stkPaint = new Paint();
+        stkPaint.setTypeface(textTypeFace);
+        stkPaint.setStyle(Paint.Style.STROKE);
+        stkPaint.setStrokeWidth(3);
+        stkPaint.setTextAlign(Paint.Align.CENTER);
+        stkPaint.setColor(Color.BLACK);
+        stkPaint.setTextSize(lyricsTextSize);
+        canvas.drawText(line, x, y, stkPaint);
 
         Log.d(TAG, "write line: " + line + ", x: " + x + ", y: " + y);
     }

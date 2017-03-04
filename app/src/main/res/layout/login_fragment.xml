@@ -19,7 +19,7 @@
             android:layout_above="@+id/linearLayout"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="@dimen/login_icon_margin_bottom"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@drawable/ic_twilllio_splash" />
 
         <LinearLayout
             android:id="@+id/linearLayout"
@@ -84,17 +84,16 @@
         </LinearLayout>
 
 
-        <Button
+        <com.pautena.hackupc.ui.customview.ButtonPlus
             android:id="@+id/email_sign_in_button"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/full_button_height"
+            android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:background="@drawable/full_button"
-            android:padding="@dimen/md_middle_standard_padding"
             android:text="@string/login"
-            android:textAllCaps="false"
-            android:textColor="@color/md_white_1000" />
+            style="@style/MyButton"
+            android:layout_marginBottom="28dp"
+            app:customFont="LuckiestGuy.ttf"/>
 
     </RelativeLayout>
 

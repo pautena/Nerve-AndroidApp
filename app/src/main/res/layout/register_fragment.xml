@@ -128,22 +128,18 @@
 
             </LinearLayout>
 
+            <com.pautena.hackupc.ui.customview.ButtonPlus
+                android:id="@+id/btn_register"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:text="@string/register"
+                style="@style/MyButton"
+                android:layout_marginBottom="28dp"
+                app:customFont="LuckiestGuy.ttf"/>
+
         </android.support.v4.widget.NestedScrollView>
-
-
-        <Button
-            android:id="@+id/btn_register"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/full_button_height"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:background="@drawable/full_button"
-            android:padding="@dimen/md_middle_standard_padding"
-            android:text="@string/register"
-            android:textAllCaps="false"
-            android:textColor="@color/md_white_1000" />
-
-
     </RelativeLayout>
 
 </LinearLayout>

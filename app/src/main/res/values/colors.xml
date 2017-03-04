@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#38bdb7</color>
-    <color name="colorPrimaryDark">#239590</color>
+    <color name="colorPrimary">#83CDA9</color>
+    <color name="colorPrimaryLight">#cdbacec4</color>
+    <color name="colorPrimaryDark">#45BEA2</color>
     <color name="colorPrimaryDarkTransparent">#5e239590</color>
-    <color name="colorAccent">#f89f12</color>
-    <color name="colorAccentDark">#C67A02</color>
+    <color name="colorAccent">#CAE3E8</color>
+    <color name="colorAccentDark">#6599A3</color>
 
     <!-- material design colors -->
     <color name="md_grey_100">#F5F5F5</color>
@@ -22,5 +23,5 @@
     <color name="md_grey_500">#9E9E9E</color>
     <color name="profile_image_border_color">#FFFFFF</color>
     <color name="primary_video_number_color">#f94d4d</color>
-    <color name="primary_video_lyrics_color">#bebdbd</color>
+    <color name="primary_video_lyrics_color">#ffffff</color>
 </resources>

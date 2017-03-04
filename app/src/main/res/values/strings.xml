@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HackUPC</string>
+    <string name="app_name">Nerve</string>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in or register</string>
@@ -31,5 +31,9 @@
     <string name="musixmatch_api_key">2ff426e3bbe6cb39e0e7d76366e26257</string>
     <string name="select_song_name">Select song</string>
     <string name="select_friend_title">Select a friend</string>
+    <string name="initial_fragment_text">Espera a que un usuario te envie una solicitud o empieza tu una</string>
+    <string name="start">Start</string>
+    <string name="wait_for_participant">Esperando que tu amigo accepte la peticion</string>
+    <string name="wait_for_start">Dale a empezar para poder cantar!</string>
 
 </resources>

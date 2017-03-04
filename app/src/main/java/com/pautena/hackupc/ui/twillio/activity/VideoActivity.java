@@ -17,7 +17,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,11 +32,13 @@ import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.services.ApiServiceAdapter;
 import com.pautena.hackupc.services.callback.CreateRoomCallback;
 import com.pautena.hackupc.services.callback.RequestJoinCallback;
-import com.pautena.hackupc.ui.login.RegisterFragment;
 import com.pautena.hackupc.ui.twillio.customviews.MyPrimaryVideoView;
 import com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView;
+import com.pautena.hackupc.ui.twillio.fragments.PlayingFragment;
 import com.pautena.hackupc.ui.twillio.fragments.SelectFriendFragment;
 import com.pautena.hackupc.ui.twillio.fragments.SongSelectionFragment;
+import com.pautena.hackupc.ui.twillio.fragments.StartOrJoinFragment;
+import com.pautena.hackupc.ui.twillio.fragments.WaitForStartFragment;
 import com.pautena.hackupc.utils.SongPlayer;
 import com.twilio.video.RoomState;
 import com.twilio.video.VideoRenderer;
@@ -55,14 +56,14 @@ import com.twilio.video.Participant;
 import com.twilio.video.Room;
 import com.twilio.video.VideoClient;
 import com.twilio.video.VideoTrack;
-import com.twilio.video.VideoView;
 
 import java.util.Map;
 
 import io.realm.Realm;
 
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
-        SelectFriendFragment.SelectFriendFragmentCallback {
+        SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
+        WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -98,11 +99,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private LocalMedia localMedia;
     private LocalAudioTrack localAudioTrack;
     private LocalVideoTrack localVideoTrack;
-    private FloatingActionButton switchCameraActionFab;
-    private FloatingActionButton localVideoActionFab;
-    private FloatingActionButton searchSongActionFab;
-    private FloatingActionButton joinFriendActionFab;
-    private FloatingActionButton muteActionFab;
     private android.support.v7.app.AlertDialog alertDialog;
     private AudioManager audioManager;
     private String participantIdentity;
@@ -115,11 +111,16 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private Realm realm;
     private VideoRoom videoRoom;
 
-    private FrameLayout container;
     private SongSelectionFragment songSelectionFragment;
     private SongPlayer songPlayer;
     private RequestUser requestUser;
     private SelectFriendFragment selectFriendFragment;
+    private StartOrJoinFragment startOrJoinFragment;
+    private Song song;
+    private boolean master = false;
+    private Participant participant;
+    private WaitForStartFragment waitForStartFragment;
+    private PlayingFragment playingFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,18 +132,10 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         user = UserManager.getInstance(this).getMainUser(realm);
 
         primaryVideoView = (MyPrimaryVideoView) findViewById(R.id.primary_video_view);
-        songPlayer = new SongPlayer(this,primaryVideoView);
+        songPlayer = new SongPlayer(this, primaryVideoView);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
 
-        switchCameraActionFab = (FloatingActionButton) findViewById(R.id.switch_camera_action_fab);
-        localVideoActionFab = (FloatingActionButton) findViewById(R.id.local_video_action_fab);
-        muteActionFab = (FloatingActionButton) findViewById(R.id.mute_action_fab);
-
-        searchSongActionFab = (FloatingActionButton) findViewById(R.id.search_action_fab);
-        joinFriendActionFab = (FloatingActionButton) findViewById(R.id.join_friend_action_fab);
-
-        container = (FrameLayout) findViewById(R.id.container);
 
         /*
          * Enable changing the volume using the up/down keys during a conversation
@@ -164,10 +157,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             createVideoClient();
         }
 
-        /*
-         * Set the initial state of the UI
-         */
-        intializeUI();
+        showStartFragment();
     }
 
     @Override
@@ -324,46 +314,27 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     }
 
     /*
-     * The initial state when there is no active conversation.
-     */
-    private void intializeUI() {
-        switchCameraActionFab.show();
-        switchCameraActionFab.setOnClickListener(switchCameraClickListener());
-        localVideoActionFab.show();
-        localVideoActionFab.setOnClickListener(localVideoClickListener());
-        muteActionFab.show();
-        muteActionFab.setOnClickListener(muteClickListener());
-
-        joinFriendActionFab.setOnClickListener(joinFriendActionListener());
-        searchSongActionFab.setOnClickListener(searchSongActionListener());
-    }
-
-    /*
      * The actions performed during disconnect.
      */
     private void setDisconnectAction() {
         //TODO
     }
 
-    /*
-     * Creates an connect UI dialog
-     */
-    private void showConnectDialog() {
-        EditText roomEditText = new EditText(this);
-        alertDialog = Dialog.createConnectDialog(roomEditText,
-                connectClickListener(roomEditText), cancelConnectDialogClickListener(), this);
-        alertDialog.show();
-    }
 
     /*
      * Called when participant joins the room
      */
     private void addParticipant(Participant participant) {
+        this.participant = participant;
+
+        if (waitForStartFragment != null) {
+            waitForStartFragment.setHaveParticipant(true);
+        }
         /*
          * This app only displays video for one additional participant per Room
          */
         if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
-            Snackbar.make(joinFriendActionFab,
+            Snackbar.make(this.primaryVideoView,
                     "Multiple participants are not currently support in this UI",
                     Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
@@ -467,7 +438,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
                 // Only reinitialize the UI if disconnect was not called from onDestroy()
                 if (!disconnectedFromOnDestroy) {
                     setAudioFocus(false);
-                    intializeUI();
                     moveLocalVideoToPrimaryView();
                 }
             }
@@ -550,116 +520,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         };
     }
 
-    private DialogInterface.OnClickListener connectClickListener(final EditText roomEditText) {
-        return new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                /*
-                 * Connect to room
-                 */
-                connectToRoom(roomEditText.getText().toString());
-            }
-        };
-    }
-
-    private View.OnClickListener disconnectClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /*
-                 * Disconnect from room
-                 */
-                if (room != null) {
-                    room.disconnect();
-                }
-                intializeUI();
-            }
-        };
-    }
-
-    private View.OnClickListener connectActionClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showConnectDialog();
-            }
-        };
-    }
-
-    private DialogInterface.OnClickListener cancelConnectDialogClickListener() {
-        return new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                intializeUI();
-                alertDialog.dismiss();
-            }
-        };
-    }
-
-    private View.OnClickListener switchCameraClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (cameraCapturer != null) {
-                    CameraSource cameraSource = cameraCapturer.getCameraSource();
-                    cameraCapturer.switchCamera();
-                    if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
-                        thumbnailVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
-                    } else {
-                        primaryVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
-                    }
-                }
-            }
-        };
-    }
-
-    private View.OnClickListener localVideoClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /*
-                 * Enable/disable the local video track
-                 */
-                if (localVideoTrack != null) {
-                    boolean enable = !localVideoTrack.isEnabled();
-                    localVideoTrack.enable(enable);
-                    int icon;
-                    if (enable) {
-                        icon = R.drawable.ic_videocam_green_24px;
-                        switchCameraActionFab.show();
-                    } else {
-                        icon = R.drawable.ic_videocam_off_red_24px;
-                        switchCameraActionFab.hide();
-                    }
-                    localVideoActionFab.setImageDrawable(
-                            ContextCompat.getDrawable(VideoActivity.this, icon));
-                }
-            }
-        };
-    }
-
-    private View.OnClickListener muteClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /*
-                 * Enable/disable the local audio track. The results of this operation are
-                 * signaled to other Participants in the same Room. When an audio track is
-                 * disabled, the audio is muted.
-                 */
-                if (localAudioTrack != null) {
-                    boolean enable = !localAudioTrack.isEnabled();
-                    localAudioTrack.enable(enable);
-                    int icon = enable ?
-                            R.drawable.ic_mic_green_24px : R.drawable.ic_mic_off_red_24px;
-                    muteActionFab.setImageDrawable(ContextCompat.getDrawable(
-                            VideoActivity.this, icon));
-                }
-            }
-        };
-    }
-
     private View.OnClickListener joinFriendActionListener() {
         return new View.OnClickListener() {
 
@@ -675,33 +535,12 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
             @Override
             public void onClick(View v) {
-                showSearchSongsFragment();
+                showSelectSongsFragment();
             }
         };
     }
 
-    private void hideFabButtons() {
-        searchSongActionFab.hide();
-        joinFriendActionFab.hide();
-        switchCameraActionFab.hide();
-        localVideoActionFab.hide();
-        muteActionFab.hide();
-
-
-    }
-
-    private void showFabButtons() {
-        searchSongActionFab.show();
-        joinFriendActionFab.show();
-        switchCameraActionFab.show();
-        localVideoActionFab.show();
-        muteActionFab.show();
-
-    }
-
-    private void showSearchSongsFragment() {
-        hideFabButtons();
-        container.setVisibility(View.VISIBLE);
+    private void showSelectSongsFragment() {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -715,10 +554,32 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     }
 
-    private void showSelectFriendFragment(){
-        hideFabButtons();
-        container.setVisibility(View.VISIBLE);
+    private void showStartFragment() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
 
+        startOrJoinFragment = StartOrJoinFragment.newInstance();
+
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
+                .replace(R.id.container, startOrJoinFragment, StartOrJoinFragment.TAG)
+                .addToBackStack(StartOrJoinFragment.TAG)
+                .commit();
+
+    }
+
+    private void showPlayingFragment() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+
+        playingFragment = PlayingFragment.newInstance();
+
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
+                .replace(R.id.container, playingFragment, PlayingFragment.TAG)
+                .addToBackStack(PlayingFragment.TAG)
+                .commit();
+    }
+
+    private void showSelectFriendFragment() {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -728,6 +589,19 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
                 .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
                 .replace(R.id.container, selectFriendFragment, SelectFriendFragment.TAG)
                 .addToBackStack(SelectFriendFragment.TAG)
+                .commit();
+    }
+
+    private void showWaitForStartFragment() {
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+
+        waitForStartFragment = WaitForStartFragment.newInstance(participant);
+
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
+                .replace(R.id.container, waitForStartFragment, WaitForStartFragment.TAG)
+                .addToBackStack(WaitForStartFragment.TAG)
                 .commit();
     }
 
@@ -752,13 +626,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onSelectSong(Song song) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .remove(songSelectionFragment)
-                .commit();
-        container.setVisibility(View.GONE);
-        showFabButtons();
-        playSong(song);
+        this.song = song;
 
 
         ApiServiceAdapter.getInstance(this).createRoom(song, user.getId(), new CreateRoomCallback() {
@@ -767,23 +635,21 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             @Override
             public void onCreateRoomFinish(VideoRoom videoRoom) {
                 VideoActivity.this.videoRoom = videoRoom;
+                VideoActivity.this.master = true;
                 connectToRoom(videoRoom.getId());
             }
         });
+        showSelectFriendFragment();
     }
 
     private void playSong(Song song) {
-        Log.d(TAG,"playSong. song: "+song);
+        Log.d(TAG, "playSong. song: " + song);
         songPlayer.play(song);
     }
 
     @Override
     public void onSelectFriend(RequestUser user) {
         this.requestUser = user;
-        getSupportFragmentManager()
-                .beginTransaction()
-                .remove(selectFriendFragment)
-                .commit();
 
         ApiServiceAdapter.getInstance(this).requestJoinToRoom(videoRoom, user, new RequestJoinCallback() {
             @Override
@@ -792,7 +658,67 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             }
         });
 
-        container.setVisibility(View.GONE);
-        showFabButtons();
+        showWaitForStartFragment();
+    }
+
+    @Override
+    public void onStartServer() {
+        //TODO
+        Log.d(TAG, "onStartServer");
+        showSelectSongsFragment();
+    }
+
+    @Override
+    public void onStartSing() {
+        Log.d(TAG, "onStartSing");
+        playSong(song);
+        showPlayingFragment();
+    }
+
+    @Override
+    public void onSwitchCamera() {
+        if (cameraCapturer != null) {
+            CameraSource cameraSource = cameraCapturer.getCameraSource();
+            cameraCapturer.switchCamera();
+            if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
+                thumbnailVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
+            } else {
+                primaryVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
+            }
+        }
+    }
+
+    @Override
+    public boolean localVideo() {
+/*
+                 * Enable/disable the local video track
+                 */
+        if (localVideoTrack != null) {
+            boolean enable = !localVideoTrack.isEnabled();
+            localVideoTrack.enable(enable);
+            int icon;
+            if (enable) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean muteAction() {
+
+        /*
+                 * Enable/disable the local audio track. The results of this operation are
+                 * signaled to other Participants in the same Room. When an audio track is
+                 * disabled, the audio is muted.
+                 */
+        if (localAudioTrack != null) {
+            boolean enable = !localAudioTrack.isEnabled();
+            localAudioTrack.enable(enable);
+            return enable;
+        }
+        return true;
     }
 }

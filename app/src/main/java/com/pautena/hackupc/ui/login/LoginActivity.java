@@ -11,7 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import com.pautena.hackupc.R;
 import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.services.ApiServiceAdapter;
-import com.pautena.hackupc.ui.main.MainActivity;
+import com.pautena.hackupc.ui.twillio.activity.VideoActivity;
 
 import io.realm.Realm;
 
@@ -101,7 +101,7 @@ public class LoginActivity extends AppCompatActivity implements LoginFragment.Lo
     }
 
     private void goToMainActivity() {
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, VideoActivity.class);
         startActivity(intent);
     }
 
