@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "747133416217",
+    "firebase_url": "https://aplecapp.firebaseio.com",
+    "project_id": "aplecapp",
+    "storage_bucket": "aplecapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:747133416217:android:6980a59ccc4ebe16",
+        "android_client_info": {
+          "package_name": "com.pautena.hackupc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "747133416217-dve2j5027eojtn7nrrhctr3h5gvuiig8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpPzQfHi_2s8TvKLFyXnPIKxzGYi4xEaY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="api_port">80</integer>
+    <integer name="splash_screen_delay">2000</integer>
+    <integer name="splash_screen_small_delay">1000</integer>
+    <integer name="realm_version">1</integer>
+    <integer name="play_song_delay">3000</integer>
+    <integer name="play_song_step">1000</integer>
+    <integer name="progress_step_lyrics">2000</integer>
+    <integer name="lyric_line_separation">70</integer>
+    <integer name="primary_video_number_size">700</integer>
+    <integer name="primary_video_lyrics_size">50</integer>
+</resources>
