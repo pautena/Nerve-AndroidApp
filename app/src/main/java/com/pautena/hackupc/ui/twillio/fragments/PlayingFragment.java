@@ -99,8 +99,6 @@ public class PlayingFragment extends Fragment {
         videoRoom = realm.where(VideoRoom.class)
                 .equalTo("id", getArguments().getString(ARG_VIDEO_ROOM_ID)).findFirst();
 
-        setViewers(videoRoom.getViewers());
-
 
         switchCameraActionFab = (FloatingActionButton) view.findViewById(R.id.switch_camera_action_fab);
         localVideoActionFab = (FloatingActionButton) view.findViewById(R.id.local_video_action_fab);
@@ -108,6 +106,7 @@ public class PlayingFragment extends Fragment {
         ibVolume = (ImageButton) view.findViewById(R.id.volume_icon);
 
         tvVisitors = (TextView) view.findViewById(R.id.visitors);
+        setViewers(videoRoom.getViewers());
 
 
         initializeAudioSeekBar(view);
@@ -221,6 +220,6 @@ public class PlayingFragment extends Fragment {
 
     public void setViewers(int viewers) {
 
-        tvVisitors.setText(Integer.valueOf(viewers));
+        tvVisitors.setText(String.valueOf(viewers));
     }
 }

@@ -43,6 +43,7 @@ import com.pautena.hackupc.ui.twillio.utils.ViewCapturer;
 import com.pautena.hackupc.utils.SongPlayer;
 import com.plattysoft.leonids.ParticleSystem;
 import com.twilio.video.AudioTrack;
+import com.twilio.video.CameraCapturer;
 import com.twilio.video.ConnectOptions;
 import com.twilio.video.LocalAudioTrack;
 import com.twilio.video.LocalMedia;
@@ -102,8 +103,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
      * Android application UI elements
      */
     private TextView videoStatusTextView;
-    //private CameraCapturer cameraCapturer;
-    private ViewCapturer viewCapturer;
+    private CameraCapturer cameraCapturer;
     private LocalMedia localMedia;
     private LocalAudioTrack localAudioTrack;
     private LocalVideoTrack localVideoTrack;
@@ -233,8 +233,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * If the local video track was removed when the app was put in the background, add it back.
          */
         if (localMedia != null && localVideoTrack == null) {
-            //localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
-            localVideoTrack = localMedia.addVideoTrack(true, viewCapturer);
+            localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
             localVideoTrack.addRenderer(localVideoView);
         }
     }
@@ -307,11 +306,9 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         localAudioTrack = localMedia.addAudioTrack(true);
 
         // Share your camera
-        //cameraCapturer = new CameraCapturer(this, CameraSource.FRONT_CAMERA);
-        //localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
+        cameraCapturer = new CameraCapturer(this, CameraCapturer.CameraSource.FRONT_CAMERA);
+        localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
 
-        viewCapturer = new ViewCapturer(mPreview);
-        localVideoTrack = localMedia.addVideoTrack(true, viewCapturer);
 
         primaryVideoView.setMirror(true);
         localVideoTrack.addRenderer(primaryVideoView);
