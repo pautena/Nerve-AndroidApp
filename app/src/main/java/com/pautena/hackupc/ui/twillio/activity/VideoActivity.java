@@ -671,7 +671,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         this.song = song;
 
 
-        ApiServiceAdapter.getInstance(this).createRoom(song, user.getId(), new CreateRoomCallback() {
+        ApiServiceAdapter.getInstance(this).createRoom(song, user.getUsername(), new CreateRoomCallback() {
 
 
             @Override
@@ -720,7 +720,22 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         query.put("_id", videoRoom.getId());
 
         Map<String, Object> values = new HashMap<>();
-        values.put("start", "true");
+        values.put("started", "true");
+
+        Map<String, Object> set = new HashMap<>();
+        set.put("$set", values);
+
+        mMeteor.update("rooms", query, set);
+    }
+
+    public void onStopSing() {
+        Log.d(TAG, "onStartSing");
+
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", videoRoom.getId());
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("started", "true");
 
         Map<String, Object> set = new HashMap<>();
         set.put("$set", values);
