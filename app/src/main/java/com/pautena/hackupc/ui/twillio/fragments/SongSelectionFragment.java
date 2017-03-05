@@ -28,7 +28,7 @@ public class SongSelectionFragment extends Fragment implements SongSelectionAdap
 
     private LinearLayoutManager mLayoutManager;
 
-    public interface SongSelectionCallback{
+    public interface SongSelectionCallback {
         void onSelectSong(Song song);
 
     }
@@ -67,7 +67,7 @@ public class SongSelectionFragment extends Fragment implements SongSelectionAdap
     @Override
     public void onDetach() {
         super.onDetach();
-        callback =emptyCallback;
+        callback = emptyCallback;
     }
 
     private Realm realm;
@@ -77,7 +77,7 @@ public class SongSelectionFragment extends Fragment implements SongSelectionAdap
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.song_selection_fragment, container, false);
 
-        realm =Realm.getDefaultInstance();
+        realm = Realm.getDefaultInstance();
 
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
         mToolbar = (Toolbar) view.findViewById(R.id.toolbar);
@@ -85,7 +85,7 @@ public class SongSelectionFragment extends Fragment implements SongSelectionAdap
 
         mLayoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(mLayoutManager);
-        recyclerView.setAdapter(SongSelectionAdapter.newInstance(realm,this));
+        recyclerView.setAdapter(SongSelectionAdapter.newInstance(getActivity(), realm, this));
         recyclerView.addItemDecoration(new SimpleDividerItemDecoration(getActivity()));
 
 
