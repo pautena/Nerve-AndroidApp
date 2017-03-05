@@ -96,7 +96,7 @@ public class PlayingFragment extends Fragment {
         realm = Realm.getDefaultInstance();
 
         videoRoom = realm.where(VideoRoom.class)
-                .equalTo("id", getArguments().getInt(ARG_VIDEO_ROOM_ID)).findFirst();
+                .equalTo("id", getArguments().getString(ARG_VIDEO_ROOM_ID)).findFirst();
 
         setViewers(videoRoom.getViewers());
 
