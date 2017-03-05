@@ -26,16 +26,18 @@ public class ProgressHandler {
     private final Context context;
     private final MediaPlayer mediaPlayer;
     private final Song song;
+    private final SongPlayer.SongPlayerListener listener;
     private Lrc lrc;
     private int step;
     private Time time;
 
-    public ProgressHandler(Context context, Song song, MediaPlayer mediaPlayer, MyPrimaryVideoView primaryVideoView) {
+    public ProgressHandler(Context context, Song song, MediaPlayer mediaPlayer, MyPrimaryVideoView primaryVideoView, SongPlayer.SongPlayerListener listener) {
         this.primaryVideoView = primaryVideoView;
         this.context = context;
         this.mediaPlayer = mediaPlayer;
         this.song = song;
         step = context.getResources().getInteger(R.integer.progress_step_lyrics);
+        this.listener = listener;
 
         lrc = LrcLoader.load(context, song.getLyricsAssetName());
         time = new Time(0);
@@ -59,6 +61,7 @@ public class ProgressHandler {
                     handler.postDelayed(this, step);
                     time.setTime(time.getTime() + step);
                 }else{
+                    listener.onFinishSong();
                     primaryVideoView.setLyricsLines(new ArrayList<String>());
                 }
 

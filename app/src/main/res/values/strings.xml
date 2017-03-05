@@ -12,7 +12,7 @@
     <string name="go_to_register">Do not have an account yet? Sign up!
     </string>
     <string name="register">Sign up</string>
-    <string name="go_to_login">Already have an account?Sign in!</string>
+    <string name="go_to_login">Already have an account? Sign in!</string>
     <string name="confirm_password">Confirm password</string>
     <string name="username">Username</string>
     <string name="api_url">www.nerve.gq</string>
@@ -39,5 +39,9 @@
     <string name="wait_for_start_no_master">The other player not started the game yet</string>
     <string name="num_songs">%1$d songs</string>
     <string name="accept">Accept</string>
+    <string name="winner_finish_message">Congratulations! You got more votes than %1$s</string>
+    <string name="looser_finish_message">Sorry, %1$s has gotten more votes than you</string>
+    <string name="play_again">Play again</string>
+    <string name="try_again">Try again</string>
 
 </resources>

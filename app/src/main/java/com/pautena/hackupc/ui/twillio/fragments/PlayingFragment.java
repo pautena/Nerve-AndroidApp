@@ -219,7 +219,8 @@ public class PlayingFragment extends Fragment {
     }
 
     public void setViewers(int viewers) {
-
-        tvVisitors.setText(String.valueOf(viewers));
+        if (tvVisitors != null) {
+            tvVisitors.setText(String.valueOf(viewers));
+        }
     }
 }

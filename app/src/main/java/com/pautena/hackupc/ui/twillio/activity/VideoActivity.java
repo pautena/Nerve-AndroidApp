@@ -3,6 +3,7 @@ package com.pautena.hackupc.ui.twillio.activity;
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -34,6 +35,7 @@ import com.pautena.hackupc.services.callback.CreateRoomCallback;
 import com.pautena.hackupc.services.callback.RequestJoinCallback;
 import com.pautena.hackupc.ui.twillio.customviews.MyPrimaryVideoView;
 import com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView;
+import com.pautena.hackupc.ui.twillio.fragments.FinalFragment;
 import com.pautena.hackupc.ui.twillio.fragments.PlayingFragment;
 import com.pautena.hackupc.ui.twillio.fragments.RequestFragment;
 import com.pautena.hackupc.ui.twillio.fragments.SelectFriendFragment;
@@ -73,7 +75,7 @@ import io.realm.Realm;
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
         SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
         WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback,
-        RequestFragment.RequestFragmentCallback {
+        RequestFragment.RequestFragmentCallback, FinalFragment.FinalFragmentCallback, SongPlayer.SongPlayerListener {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -136,6 +138,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private WaitForStartFragment waitForStartFragment;
     private PlayingFragment playingFragment;
     private RequestFragment requestFragment;
+    private FinalFragment finalFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,6 +151,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         primaryVideoView = (MyPrimaryVideoView) findViewById(R.id.primary_video_view);
         songPlayer = new SongPlayer(this, primaryVideoView);
+        songPlayer.setListener(this);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
 
@@ -231,12 +235,13 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * If this local video track is being shared in a Room, participants will be notified
          * that the track has been removed.
          */
+        onStopSing();
         if (localMedia != null && localVideoTrack != null) {
             localMedia.removeVideoTrack(localVideoTrack);
             localVideoTrack = null;
         }
-        onStopSing();
         super.onPause();
+        finish();
     }
 
     @Override
@@ -605,6 +610,18 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
                 .commit();
     }
 
+    public void showFinalFragment() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+
+        finalFragment = FinalFragment.newInstance(videoRoom, master);
+
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
+                .replace(R.id.container, finalFragment, FinalFragment.TAG)
+                .addToBackStack(FinalFragment.TAG)
+                .commit();
+    }
+
     private void showSelectFriendFragment() {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -726,14 +743,14 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     }
 
     public void onStopSing() {
-        if(videoRoom!=null) {
-            Log.d(TAG, "onStartSing");
+        Log.d(TAG, "onStopSing. videoRoom: " + videoRoom);
+        if (videoRoom != null) {
 
             Map<String, Object> query = new HashMap<>();
             query.put("_id", videoRoom.getId());
 
             Map<String, Object> values = new HashMap<>();
-            values.put("started", false);
+            values.put("accepted", false);
 
             Map<String, Object> set = new HashMap<>();
             set.put("$set", values);
@@ -816,7 +833,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     }
 
     public void setViewers(int viewers) {
-        if(playingFragment!=null){
+        if (playingFragment != null) {
             playingFragment.setViewers(viewers);
         }
     }
@@ -849,16 +866,16 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     private void rainSnow() {
 
-        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
-                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 0, 90)
+        new ParticleSystem(this, 10, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.05f, 0.2f, 0, 90)
                 .setRotationSpeed(144)
-                .oneShot(findViewById(R.id.emiter_top_left), 20);
+                .oneShot(findViewById(R.id.emiter_top_left), 10);
 
 
-        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
-                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 90, 180)
+        new ParticleSystem(this, 10, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.05f, 0.2f, 90, 180)
                 .setRotationSpeed(144)
-                .oneShot(findViewById(R.id.emiter_top_right), 20);
+                .oneShot(findViewById(R.id.emiter_top_right), 10);
     }
 
     private void rainConfetti() {
@@ -875,5 +892,19 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
                 .setRotationSpeed(144)
                 .setAcceleration(0.00005f, 90)
                 .emit(findViewById(R.id.emiter_top_right), 60);
+    }
+
+    @Override
+    public void restartActivity() {
+        Intent intent = new Intent(this, VideoActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
+
+    @Override
+    public void onFinishSong() {
+        showFinalFragment();
+        onStopSing();
     }
 }

@@ -73,7 +73,6 @@ public class SongPlayer {
                     primaryVideoView.delayToStart(delay - currentDelay[0]);
                 } else {
                     try {
-                        listener.onFinishSong();
                         primaryVideoView.delayToStart(-1);
                         AssetFileDescriptor afd = context.getAssets().openFd(song.getAudioAssetName());
                         player = new MediaPlayer();
@@ -82,7 +81,7 @@ public class SongPlayer {
                         player.start();
 
 
-                        new ProgressHandler(context,song,player,primaryVideoView).start();
+                        new ProgressHandler(context,song,player,primaryVideoView,listener).start();
                     } catch (IOException e) {
                     }
                 }

@@ -26,6 +26,7 @@ import com.pautena.hackupc.utils.SongLoader;
 import java.util.ArrayList;
 import java.util.List;
 
+import im.delight.android.ddp.Meteor;
 import im.delight.android.ddp.MeteorSingleton;
 import im.delight.android.ddp.db.memory.InMemoryDatabase;
 import io.realm.Realm;
@@ -58,7 +59,10 @@ public class SplashScreen extends AppCompatActivity {
         new SongLoader().load(realm);
         FirebaseApp.initializeApp(this);
         user = UserManager.getInstance(this).getMainUser(realm);
-        MeteorSingleton.createInstance(this, "http://www.nerve.gq/websocket", new InMemoryDatabase());
+
+        if(!MeteorSingleton.hasInstance()) {
+            MeteorSingleton.createInstance(this, "http://www.nerve.gq/websocket", new InMemoryDatabase());
+        }
 
         root = (RelativeLayout) findViewById(R.id.root);
 
