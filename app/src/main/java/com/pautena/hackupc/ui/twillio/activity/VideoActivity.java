@@ -364,10 +364,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * This app only displays video for one additional participant per Room
          */
         if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
-            Snackbar.make(this.primaryVideoView,
-                    "Multiple participants are not currently support in this UI",
-                    Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
             return;
         }
         participantIdentity = participant.getIdentity();
@@ -721,7 +717,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         query.put("_id", videoRoom.getId());
 
         Map<String, Object> values = new HashMap<>();
-        values.put("started", "true");
+        values.put("started", true);
 
         Map<String, Object> set = new HashMap<>();
         set.put("$set", values);
@@ -737,7 +733,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             query.put("_id", videoRoom.getId());
 
             Map<String, Object> values = new HashMap<>();
-            values.put("started", "true");
+            values.put("started", false);
 
             Map<String, Object> set = new HashMap<>();
             set.put("$set", values);
