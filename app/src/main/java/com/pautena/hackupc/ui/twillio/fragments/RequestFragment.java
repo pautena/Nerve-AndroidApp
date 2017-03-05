@@ -13,14 +13,10 @@ import android.widget.TextView;
 
 import com.pautena.hackupc.R;
 import com.pautena.hackupc.entities.RequestUser;
-import com.pautena.hackupc.entities.Song;
 import com.pautena.hackupc.entities.VideoRoom;
-import com.twilio.video.Participant;
-import com.twilio.video.Room;
 
 import im.delight.android.ddp.Meteor;
 import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.db.Document;
 import io.realm.Realm;
 
 /**
@@ -109,20 +105,14 @@ public class RequestFragment extends Fragment {
     public void setVideoRoom(VideoRoom videoRoom) {
         Log.d(TAG, "setHaveParticipant. videoRoom: " + videoRoom);
 
-        String singer1Id = videoRoom.getSinger1Id();
+        String singer1Username = videoRoom.getSinger1Username();
 
-        RequestUser singer1 = realm.where(RequestUser.class).equalTo("id", singer1Id).findFirst();
+        Log.d(TAG, "singer1: " + singer1Username);
 
-        if (singer1 != null) {
+        String title = getResources()
+                .getString(R.string.new_request, singer1Username, videoRoom.getSong().getTitle());
 
-            Log.d(TAG, "singer1: " + singer1);
+        titleTextView.setText(title);
 
-            String title = getResources()
-                    .getString(R.string.new_request, singer1.getUsername(), videoRoom.getSong().getTitle());
-
-            titleTextView.setText(title);
-        } else {
-            Log.e(TAG, "singer1 is null");
-        }
     }
 }

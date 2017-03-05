@@ -49,6 +49,26 @@ public class SongLoader {
                 81);
         songs.add(song);
 
+        song = new Song("84488256",
+                "El taxi",
+                "Pitbull, Sensato & Osmani Garcia",
+                "el_taxi.mp3",
+                "el_taxi_ecdl.lrc",
+                "https://i.ytimg.com/vi/qRp3-D3SMwI/maxresdefault.jpg",
+                "Reggeton",
+                81);
+        songs.add(song);
+
+        song = new Song("53657250",
+                "Smoke weed everyday",
+                "Anthony B",
+                "smoke_weed_everyday.mp3",
+                "smoke_weed_everyday_ecdl.lrc",
+                "http://s.storage.akamai.coub.com/get/b85/p/coub/simple/cw_timeline_pic/4de4bd11a3a/0bca88430a5da3d043a49/big_1415530507_image.jpg",
+                "Reggae",
+                81);
+        songs.add(song);
+
         realm.beginTransaction();
         realm.copyToRealmOrUpdate(songs);
         realm.commitTransaction();

@@ -7,6 +7,23 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true"
     tools:showIn="@layout/activity_video">
+    <View android:id="@+id/emiter_top_left"
+        android:layout_marginTop="-20dp"
+        android:layout_width="1dp"
+        android:layout_height="1dp" />
+
+    <View android:id="@+id/emiter_top_right"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="-20dp"
+        android:layout_width="1dp"
+        android:layout_height="1dp" />
+
+
+    <View android:id="@+id/emiter_top_center"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="-20dp"
+        android:layout_width="1dp"
+        android:layout_height="1dp" />
 
     <com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView
         android:id="@+id/thumbnail_video_view"

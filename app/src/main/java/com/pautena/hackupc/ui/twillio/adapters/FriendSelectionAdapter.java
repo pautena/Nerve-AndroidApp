@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.pautena.hackupc.R;
@@ -14,6 +15,9 @@ import com.pautena.hackupc.entities.RequestUser;
 import com.pautena.hackupc.entities.Song;
 import com.pautena.hackupc.entities.User;
 import com.pautena.hackupc.entities.manager.UserManager;
+import com.squareup.picasso.Picasso;
+
+import java.util.Random;
 
 import io.realm.OrderedRealmCollection;
 import io.realm.Realm;
@@ -26,6 +30,8 @@ import io.realm.RealmResults;
 
 public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser, FriendSelectionAdapter.ViewHolder> {
     private static final String TAG = FriendSelectionAdapter.class.getSimpleName();
+    private final Context context;
+
 
     public interface FriendSelectionAdapterListener {
         void onSelectItem(RequestUser requestUser);
@@ -40,14 +46,17 @@ public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser
                 .notEqualTo("id", mainUser.getId())
                 .findAll();
 
-        return new FriendSelectionAdapter(requestUsers, true, listener);
+        return new FriendSelectionAdapter(context, requestUsers, true, listener);
     }
 
     private FriendSelectionAdapterListener listener;
+    private int[] profileImagesResId = new int[]{R.drawable.ic_profile1, R.drawable.ic_profile2,
+            R.drawable.ic_profile3, R.drawable.ic_profile4};
 
-    private FriendSelectionAdapter(@Nullable OrderedRealmCollection data, boolean autoUpdate, FriendSelectionAdapterListener listener) {
+    private FriendSelectionAdapter(Context context, @Nullable OrderedRealmCollection data, boolean autoUpdate, FriendSelectionAdapterListener listener) {
         super(data, autoUpdate);
         this.listener = listener;
+        this.context = context;
 
         Log.d(TAG, "data: " + data);
     }
@@ -61,15 +70,22 @@ public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        final RequestUser song = getItem(position);
+        final RequestUser requestUser = getItem(position);
 
-        holder.tvUsername.setText(song.getUsername());
+        holder.tvUsername.setText(requestUser.getUsername());
+
+        Random random = new Random();
+        int value = random.nextInt(90) + 10;
+        String msg = context.getResources().getString(R.string.num_songs, value);
+        holder.tvInfo.setText(msg);
+
+        Picasso.with(context).load(profileImagesResId[position % 4]).into(holder.ivProfileImage);
 
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listener.onSelectItem(song);
+                listener.onSelectItem(requestUser);
             }
         });
 
@@ -78,8 +94,9 @@ public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        public TextView tvUsername;
+        public TextView tvUsername, tvInfo;
         public View itemView;
+        public ImageView ivProfileImage;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -87,6 +104,8 @@ public class FriendSelectionAdapter extends RealmRecyclerViewAdapter<RequestUser
             this.itemView = itemView;
 
             tvUsername = (TextView) itemView.findViewById(R.id.tv_username);
+            ivProfileImage = (ImageView) itemView.findViewById(R.id.user_profile_image);
+            tvInfo = (TextView) itemView.findViewById(R.id.tv_number);
         }
     }
 }

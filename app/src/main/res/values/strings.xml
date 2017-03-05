@@ -9,15 +9,15 @@
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="login">login</string>
-    <string name="go_to_register">¿Todavía no tienes cuenta? ¡Registrate!
+    <string name="go_to_register">Do not have an account yet? Sign up!
     </string>
-    <string name="register">Registrar</string>
-    <string name="go_to_login">¿Ya tienes cuenta?¡Entra!</string>
+    <string name="register">Sign up</string>
+    <string name="go_to_login">Already have an account?Sign in!</string>
     <string name="confirm_password">Confirm password</string>
     <string name="username">Username</string>
     <string name="api_url">www.nerve.gq</string>
-    <string name="error_register">Error en el proceso de registro</string>
-    <string name="not_equals_password_regsiter">Las contraseñas no son iguales</string>
+    <string name="error_register">Error in register</string>
+    <string name="not_equals_password_regsiter">Password don\'t match</string>
     <string name="realm_name" translatable="false">hackupc.realm</string>
     <string name="title_activity_login">Login</string>
 
@@ -31,11 +31,13 @@
     <string name="musixmatch_api_key">2ff426e3bbe6cb39e0e7d76366e26257</string>
     <string name="select_song_name">Select song</string>
     <string name="select_friend_title">Select a friend</string>
-    <string name="initial_fragment_text">Espera a que un usuario te envie una solicitud o empieza tu una</string>
+    <string name="initial_fragment_text">Wait for a request or send one</string>
     <string name="start">Start</string>
-    <string name="wait_for_participant">Esperando que tu amigo accepte la peticion</string>
-    <string name="wait_for_start">Dale a empezar para poder cantar!</string>
-    <string name="new_request">El usuario %1$s te ha invitado a unirte a cantar la canción %2$s</string>
-    <string name="wait_for_start_no_master">Espera a que el otro jugador le de a empezar</string>
+    <string name="wait_for_participant">Waiting for your friend to accept the request</string>
+    <string name="wait_for_start">Push start to sing!</string>
+    <string name="new_request"> %1$s has invited you to sing the song %2$s</string>
+    <string name="wait_for_start_no_master">The other player not started the game yet</string>
+    <string name="num_songs">%1$d songs</string>
+    <string name="accept">Accept</string>
 
 </resources>

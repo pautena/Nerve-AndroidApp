@@ -38,7 +38,7 @@ public class SongSelectionAdapter extends RealmRecyclerViewAdapter<Song, SongSel
 
     public static SongSelectionAdapter newInstance(Context context, Realm realm, SongSelectionAdapterListener listener) {
 
-        RealmResults<Song> songs = realm.where(Song.class).findAll();
+        RealmResults<Song> songs = realm.where(Song.class).findAllSorted("title");
 
         return new SongSelectionAdapter(context, songs, true, listener);
 

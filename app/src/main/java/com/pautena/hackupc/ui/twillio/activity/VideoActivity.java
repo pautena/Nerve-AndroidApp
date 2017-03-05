@@ -42,6 +42,7 @@ import com.pautena.hackupc.ui.twillio.fragments.StartOrJoinFragment;
 import com.pautena.hackupc.ui.twillio.fragments.WaitForStartFragment;
 import com.pautena.hackupc.ui.twillio.listeners.MeteorListener;
 import com.pautena.hackupc.utils.SongPlayer;
+import com.plattysoft.leonids.ParticleSystem;
 import com.twilio.video.RoomState;
 import com.twilio.video.VideoRenderer;
 import com.twilio.video.TwilioException;
@@ -72,7 +73,7 @@ import io.realm.Realm;
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
         SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
         WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback,
-        RequestFragment.RequestFragmentCallback {
+        RequestFragment.RequestFragmentCallback, SongPlayer.SongPlayerListener {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -147,6 +148,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         primaryVideoView = (MyPrimaryVideoView) findViewById(R.id.primary_video_view);
         songPlayer = new SongPlayer(this, primaryVideoView);
+        songPlayer.setListener(this);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
 
@@ -234,6 +236,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localMedia.removeVideoTrack(localVideoTrack);
             localVideoTrack = null;
         }
+        stopSing();
         super.onPause();
     }
 
@@ -362,10 +365,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * This app only displays video for one additional participant per Room
          */
         if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
-            Snackbar.make(this.primaryVideoView,
-                    "Multiple participants are not currently support in this UI",
-                    Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
             return;
         }
         participantIdentity = participant.getIdentity();
@@ -598,7 +597,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private void showPlayingFragment() {
         FragmentManager fragmentManager = getSupportFragmentManager();
 
-        playingFragment = PlayingFragment.newInstance();
+        playingFragment = PlayingFragment.newInstance(videoRoom);
 
         fragmentManager.beginTransaction()
                 .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
@@ -670,7 +669,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         this.song = song;
 
 
-        ApiServiceAdapter.getInstance(this).createRoom(song, user.getId(), new CreateRoomCallback() {
+        ApiServiceAdapter.getInstance(this).createRoom(song, user.getUsername(), new CreateRoomCallback() {
 
 
             @Override
@@ -713,13 +712,27 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onStartSing() {
-        Log.d(TAG, "onStartSing");
+        Log.d(TAG, "onStartSing. roomId: " + videoRoom.getId());
 
         Map<String, Object> query = new HashMap<>();
         query.put("_id", videoRoom.getId());
 
         Map<String, Object> values = new HashMap<>();
-        values.put("start", "true");
+        values.put("started", true);
+
+        Map<String, Object> set = new HashMap<>();
+        set.put("$set", values);
+
+        mMeteor.update("rooms", query, set);
+
+    }
+
+    public void stopSing() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", videoRoom.getId());
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("started", false);
 
         Map<String, Object> set = new HashMap<>();
         set.put("$set", values);
@@ -739,6 +752,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             }
         }
     }
+
 
     @Override
     public boolean localVideo() {
@@ -799,5 +813,78 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         connectToRoom(videoRoom.getId());
         showWaitForStartFragment(master);
+    }
+
+    public void setViewers(int viewers) {
+        if (videoRoom != null) {
+            realm.beginTransaction();
+            videoRoom.setViewers(viewers);
+            realm.commitTransaction();
+
+            if (playingFragment != null) {
+                playingFragment.setViewers(viewers);
+            }
+        }
+    }
+
+    @Override
+    public void onFinishSong() {
+        stopSing();
+    }
+
+    public void onUpdateVotes(int vote, int nVotes) {
+        Log.d(TAG, "onUpdateVotes. vote: " + vote + ", nVotes: " + nVotes);
+        int oldVote = videoRoom.getVote();
+
+        realm.beginTransaction();
+        videoRoom.setVote(vote);
+        if (nVotes > 0) {
+            videoRoom.setnVotes(nVotes);
+        }
+        realm.commitTransaction();
+
+        if (master) {
+            if (vote < oldVote) {
+                rainConfetti();
+            } else {
+                rainSnow();
+            }
+        } else {
+            if (vote > oldVote) {
+                rainConfetti();
+            } else {
+                rainSnow();
+            }
+        }
+    }
+
+    private void rainSnow() {
+
+        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 0, 90)
+                .setRotationSpeed(144)
+                .oneShot(findViewById(R.id.emiter_top_left), 20);
+
+
+        new ParticleSystem(this, 80, R.drawable.snowflake, 10000)
+                .setSpeedModuleAndAngleRange(0.1f, 0.3f, 90, 180)
+                .setRotationSpeed(144)
+                .oneShot(findViewById(R.id.emiter_top_right), 20);
+    }
+
+    private void rainConfetti() {
+
+        new ParticleSystem(this, 60, R.drawable.confeti2, 10000)
+                .setSpeedModuleAndAngleRange(0.4f, 0.9f, 0, 90)
+                .setRotationSpeed(144)
+                .setAcceleration(0.00005f, 90)
+                .emit(findViewById(R.id.emiter_top_left), 60);
+
+
+        new ParticleSystem(this, 60, R.drawable.confeti3, 10000)
+                .setSpeedModuleAndAngleRange(0.4f, 0.9f, 90, 180)
+                .setRotationSpeed(144)
+                .setAcceleration(0.00005f, 90)
+                .emit(findViewById(R.id.emiter_top_right), 60);
     }
 }
