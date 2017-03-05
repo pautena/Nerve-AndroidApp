@@ -14,6 +14,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,6 +31,7 @@ import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.services.ApiServiceAdapter;
 import com.pautena.hackupc.services.callback.CreateRoomCallback;
 import com.pautena.hackupc.services.callback.RequestJoinCallback;
+import com.pautena.hackupc.ui.customview.CameraPreview;
 import com.pautena.hackupc.ui.twillio.customviews.MyPrimaryVideoView;
 import com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView;
 import com.pautena.hackupc.ui.twillio.fragments.PlayingFragment;
@@ -133,6 +135,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private PlayingFragment playingFragment;
     private RequestFragment requestFragment;
     private RelativeLayout rootContainer;
+    private FrameLayout preview;
+    private CameraPreview mPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,6 +152,10 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
         rootContainer = (RelativeLayout) findViewById(R.id.video_container);
+
+        mPreview = new CameraPreview(this);
+        preview = (FrameLayout) findViewById(R.id.camera_preview);
+        preview.addView(mPreview);
 
         /*
          * Enable changing the volume using the up/down keys during a conversation
@@ -304,7 +312,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         //cameraCapturer = new CameraCapturer(this, CameraSource.FRONT_CAMERA);
         //localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
 
-        viewCapturer = new ViewCapturer(this, ViewCapturer.FRONT_CAMERA);
+        viewCapturer = new ViewCapturer(mPreview);
         localVideoTrack = localMedia.addVideoTrack(true, viewCapturer);
 
         primaryVideoView.setMirror(true);
