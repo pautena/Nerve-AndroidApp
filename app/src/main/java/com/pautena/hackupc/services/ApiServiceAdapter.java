@@ -248,9 +248,11 @@ public class ApiServiceAdapter {
     }
 
     public void requestJoinToRoom(final VideoRoom videoRoom, final RequestUser user, final RequestJoinCallback callback) {
-        Call<JsonObject> call = service.requestJoin(videoRoom.getId(), user.getUsername());
 
-        final String videoRoomId = videoRoom.getId();
+        Log.d(TAG, "roomId: " + videoRoom.getId() + ", username: " + user.getId());
+
+        Call<JsonObject> call = service.requestJoin(videoRoom.getId(), user.getId());
+
 
         call.enqueue(new Callback<JsonObject>() {
             @Override
