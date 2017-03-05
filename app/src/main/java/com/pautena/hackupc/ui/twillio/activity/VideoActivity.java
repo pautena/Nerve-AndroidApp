@@ -235,6 +235,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localMedia.removeVideoTrack(localVideoTrack);
             localVideoTrack = null;
         }
+        onStopSing();
         super.onPause();
     }
 
@@ -729,18 +730,20 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     }
 
     public void onStopSing() {
-        Log.d(TAG, "onStartSing");
+        if(videoRoom!=null) {
+            Log.d(TAG, "onStartSing");
 
-        Map<String, Object> query = new HashMap<>();
-        query.put("_id", videoRoom.getId());
+            Map<String, Object> query = new HashMap<>();
+            query.put("_id", videoRoom.getId());
 
-        Map<String, Object> values = new HashMap<>();
-        values.put("started", "true");
+            Map<String, Object> values = new HashMap<>();
+            values.put("started", "true");
 
-        Map<String, Object> set = new HashMap<>();
-        set.put("$set", values);
+            Map<String, Object> set = new HashMap<>();
+            set.put("$set", values);
 
-        mMeteor.update("rooms", query, set);
+            mMeteor.update("rooms", query, set);
+        }
     }
 
     @Override
@@ -764,7 +767,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         if (localVideoTrack != null) {
             boolean enable = !localVideoTrack.isEnabled();
             localVideoTrack.enable(enable);
-            int icon;
             if (enable) {
                 return true;
             } else {

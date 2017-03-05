@@ -35,10 +35,6 @@ public class SplashScreen extends AppCompatActivity {
     private final static String TAG = SplashScreen.class.getSimpleName();
     private static final int MY_PERMISSIONS_REQUEST = 1;
 
-    static {
-        System.loadLibrary("opencv_java3");
-    }
-
     private Realm realm;
     private User user;
 
