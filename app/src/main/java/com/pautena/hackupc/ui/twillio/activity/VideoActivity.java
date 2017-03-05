@@ -5,9 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
@@ -45,8 +43,6 @@ import com.pautena.hackupc.ui.twillio.utils.ViewCapturer;
 import com.pautena.hackupc.utils.SongPlayer;
 import com.plattysoft.leonids.ParticleSystem;
 import com.twilio.video.AudioTrack;
-import com.twilio.video.CameraCapturer;
-import com.twilio.video.CameraCapturer.CameraSource;
 import com.twilio.video.ConnectOptions;
 import com.twilio.video.LocalAudioTrack;
 import com.twilio.video.LocalMedia;
@@ -70,7 +66,7 @@ import io.realm.Realm;
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
         SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
         WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback,
-        RequestFragment.RequestFragmentCallback {
+        RequestFragment.RequestFragmentCallback, SongPlayer.SongPlayerListener {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -149,6 +145,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         primaryVideoView = (MyPrimaryVideoView) findViewById(R.id.primary_video_view);
         songPlayer = new SongPlayer(this, primaryVideoView);
+        songPlayer.setListener(this);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
         rootContainer = (RelativeLayout) findViewById(R.id.video_container);
@@ -255,6 +252,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localMedia.removeVideoTrack(localVideoTrack);
             localVideoTrack = null;
         }
+        stopSing();
         super.onPause();
     }
 
@@ -617,7 +615,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private void showPlayingFragment() {
         FragmentManager fragmentManager = getSupportFragmentManager();
 
-        playingFragment = PlayingFragment.newInstance();
+        playingFragment = PlayingFragment.newInstance(videoRoom);
 
         fragmentManager.beginTransaction()
                 .setCustomAnimations(R.anim.enter_anim, R.anim.exit_anim, R.anim.enter_anim, R.anim.exit_anim)
@@ -689,7 +687,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         this.song = song;
 
 
-        ApiServiceAdapter.getInstance(this).createRoom(song, user.getId(), new CreateRoomCallback() {
+        ApiServiceAdapter.getInstance(this).createRoom(song, user.getUsername(), new CreateRoomCallback() {
 
 
             @Override
@@ -732,13 +730,27 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onStartSing() {
-        Log.d(TAG, "onStartSing");
+        Log.d(TAG, "onStartSing. roomId: " + videoRoom.getId());
 
         Map<String, Object> query = new HashMap<>();
         query.put("_id", videoRoom.getId());
 
         Map<String, Object> values = new HashMap<>();
-        values.put("start", "true");
+        values.put("started", true);
+
+        Map<String, Object> set = new HashMap<>();
+        set.put("$set", values);
+
+        mMeteor.update("rooms", query, set);
+
+    }
+
+    public void stopSing() {
+        Map<String, Object> query = new HashMap<>();
+        query.put("_id", videoRoom.getId());
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("started", false);
 
         Map<String, Object> set = new HashMap<>();
         set.put("$set", values);
@@ -758,6 +770,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             }
         }*/
     }
+
 
     @Override
     public boolean localVideo() {
@@ -818,6 +831,50 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         connectToRoom(videoRoom.getId());
         showWaitForStartFragment(master);
+    }
+
+
+    public void setViewers(int viewers) {
+        if (videoRoom != null) {
+            realm.beginTransaction();
+            videoRoom.setViewers(viewers);
+            realm.commitTransaction();
+
+            if (playingFragment != null) {
+                playingFragment.setViewers(viewers);
+            }
+        }
+    }
+
+    @Override
+    public void onFinishSong() {
+        stopSing();
+    }
+
+    public void onUpdateVotes(int vote, int nVotes) {
+        Log.d(TAG, "onUpdateVotes. vote: " + vote + ", nVotes: " + nVotes);
+        int oldVote = videoRoom.getVote();
+
+        realm.beginTransaction();
+        videoRoom.setVote(vote);
+        if (nVotes > 0) {
+            videoRoom.setnVotes(nVotes);
+        }
+        realm.commitTransaction();
+
+        if (master) {
+            if (vote < oldVote) {
+                rainConfetti();
+            } else {
+                rainSnow();
+            }
+        } else {
+            if (vote > oldVote) {
+                rainConfetti();
+            } else {
+                rainSnow();
+            }
+        }
     }
 
     private void rainSnow() {

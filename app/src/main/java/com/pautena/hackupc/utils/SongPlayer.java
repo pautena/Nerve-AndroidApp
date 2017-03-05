@@ -20,6 +20,9 @@ import java.util.ArrayList;
  */
 
 public class SongPlayer {
+    public interface SongPlayerListener{
+        void onFinishSong();
+    }
     private static final String TAG = SongPlayer.class.getSimpleName();
     private final MyPrimaryVideoView primaryVideoView;
     private Context context;
@@ -28,12 +31,23 @@ public class SongPlayer {
     private int delay;
     private int step;
 
+    private SongPlayerListener listener= new SongPlayerListener() {
+        @Override
+        public void onFinishSong() {
+
+        }
+    };
+
 
     public SongPlayer(Context context, MyPrimaryVideoView primaryVideoView) {
         this.context = context;
         this.primaryVideoView = primaryVideoView;
         delay = context.getResources().getInteger(R.integer.play_song_delay);
         step = context.getResources().getInteger(R.integer.play_song_step);
+    }
+
+    public void setListener(SongPlayerListener listener) {
+        this.listener = listener;
     }
 
     public void play(Song song) {
@@ -59,6 +73,7 @@ public class SongPlayer {
                     primaryVideoView.delayToStart(delay - currentDelay[0]);
                 } else {
                     try {
+                        listener.onFinishSong();
                         primaryVideoView.delayToStart(-1);
                         AssetFileDescriptor afd = context.getAssets().openFd(song.getAudioAssetName());
                         player = new MediaPlayer();

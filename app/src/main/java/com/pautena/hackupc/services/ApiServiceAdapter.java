@@ -18,7 +18,6 @@ import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.services.callback.CreateRoomCallback;
 import com.pautena.hackupc.services.callback.FinishGetFriendsCallback;
 import com.pautena.hackupc.services.callback.RequestJoinCallback;
-import com.twilio.video.VideoRenderer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -207,9 +206,15 @@ public class ApiServiceAdapter {
         });
     }
 
-    public void createRoom(final Song song, final String singer1Id, final CreateRoomCallback callback) {
+    public void createRoom(final Song song, final String singer1Username, final CreateRoomCallback callback) {
 
-        Call<JsonObject> call = service.createRoom(song.getTitle(), song.getAuthor(), song.getId(), singer1Id);
+        Call<JsonObject> call = service.createRoom(song.getTitle(),
+                song.getAuthor(),
+                song.getId(),
+                song.getCoverUrl(),
+                singer1Username);
+
+        Log.d(TAG, "singer1Username: " + singer1Username);
 
         call.enqueue(new Callback<JsonObject>() {
             @Override
@@ -220,12 +225,11 @@ public class ApiServiceAdapter {
                     realm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(Realm realm) {
-                            String id = response.body().getAsJsonArray("ops").get(0)
-                                    .getAsJsonObject().get("_id").getAsString();
+                            String id = response.body().get("id").getAsString();
 
                             VideoRoom room = realm.createObject(VideoRoom.class, id);
                             room.setSong(song);
-                            room.setSinger1Id(singer1Id);
+                            room.setSinger1Username(singer1Username);
                             callback.onCreateRoomFinish(room);
 
                         }
@@ -258,7 +262,7 @@ public class ApiServiceAdapter {
                         @Override
                         public void execute(Realm realm) {
 
-                            videoRoom.setSinger2Id(user.getId());
+                            videoRoom.setSinger2Username(user.getUsername());
                         }
                     });
 
@@ -329,6 +333,8 @@ public class ApiServiceAdapter {
                                      public void onError(Throwable error) {
                                      }
                                  });
+                             } else {
+                                 callback.onFinishGetFriends();
                              }
 
                          }
@@ -336,7 +342,7 @@ public class ApiServiceAdapter {
                          @Override
                          public void onFailure(Call<JsonArray> call, Throwable t) {
                              Log.e(TAG, "error: " + t.getMessage());
-
+                             callback.onFinishGetFriends();
                          }
                      }
 

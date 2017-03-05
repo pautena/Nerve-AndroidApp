@@ -18,5 +18,5 @@
         android:layout_height="@dimen/splash_icon_size"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:src="@drawable/ic_twilllio_splash" />
+        android:src="@drawable/nerve_splash" />
 </RelativeLayout>

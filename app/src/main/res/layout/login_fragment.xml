@@ -19,7 +19,7 @@
             android:layout_above="@+id/linearLayout"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="@dimen/login_icon_margin_bottom"
-            android:src="@drawable/ic_twilllio_splash" />
+            android:src="@drawable/nerve_splash" />
 
         <LinearLayout
             android:id="@+id/linearLayout"

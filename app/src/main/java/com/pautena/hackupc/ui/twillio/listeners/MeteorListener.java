@@ -4,7 +4,6 @@ import android.util.Log;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.pautena.hackupc.entities.Song;
 import com.pautena.hackupc.entities.User;
@@ -69,7 +68,12 @@ public class MeteorListener implements MeteorCallback {
         try {
             jsonObjectChange(collectionName, documentID, updated, removed);
         } catch (IllegalStateException e) {
-            jsonArrayChange(collectionName, documentID, updated, removed);
+            e.printStackTrace();
+            try {
+                jsonArrayChange(collectionName, documentID, updated, removed);
+            } catch (IllegalStateException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 
@@ -93,28 +97,40 @@ public class MeteorListener implements MeteorCallback {
 
             if (updatedJson.has("singer2")) {
                 String sender2 = updatedJson.get("singer2").getAsString();
-                if (sender2.equals(user.getId())) {
+                if (sender2.equals(user.getUsername())) {
                     Document document = meteor.getDatabase().getCollection(collectionName).getDocument(documentID);
 
                     Log.d(TAG, "document: " + document);
 
                     String songId = (String) document.getField("songId");
-                    String singer1Id = (String) document.getField("singer1");
-                    String singer2Id = (String) document.getField("singer2");
+
+                    String singer1Username = (String) document.getField("singer1");
+                    String singer2Username = (String) document.getField("singer2");
 
                     Song song = realm.where(Song.class).equalTo("id", songId).findFirst();
 
                     realm.beginTransaction();
                     VideoRoom room = realm.createObject(VideoRoom.class, documentID);
                     room.setSong(song);
-                    room.setSinger1Id(singer1Id);
-                    room.setSinger2Id(singer2Id);
+                    room.setSinger1Username(singer1Username);
+                    room.setSinger2Username(singer2Username);
                     realm.commitTransaction();
 
                     activity.onRequestReceived(room);
                 }
-            } else if (updatedJson.has("start") && updatedJson.get("start").getAsBoolean()) {
+            } else if (updatedJson.has("started") && updatedJson.get("started").getAsBoolean()) {
                 activity.playSong();
+            } else if (updatedJson.has("viewers")) {
+                activity.setViewers(updatedJson.get("viewers").getAsInt());
+            } else if (updatedJson.has("vote")) {
+                int vote = updatedJson.get("vote").getAsInt();
+
+                int nVotes = -1;
+                if (updatedJson.has("nVotes")) {
+                    nVotes = updatedJson.get("nVotes").getAsInt();
+                }
+
+                activity.onUpdateVotes(vote, nVotes);
             }
         }
     }

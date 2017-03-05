@@ -32,15 +32,17 @@ public interface ApiService {
     Call<JsonObject> updateUserFirebaseToken(@Field("token") String firebaseToken);
 
     @FormUrlEncoded
-    @POST("rooms")
+    @POST("methods/createRoom")
     Call<JsonObject> createRoom(@Field("songTitle") String songTitle,
                                 @Field("songArtist") String songArtist,
                                 @Field("songId") String songId,
-                                @Field("singer1") String userId);
+                                @Field("songImage") String songImg,
+                                @Field("singer1") String singer1Username);
 
     @FormUrlEncoded
     @POST("methods/requestPartner")
-    Call<JsonObject> requestJoin(@Field("roomId") String roomId, @Field("partnerId") String partnerId);
+    Call<JsonObject> requestJoin(@Field("roomId") String roomId,
+                                 @Field("partnerId") String partnerId);
 
     @FormUrlEncoded
     @POST("methods/acceptRequest")

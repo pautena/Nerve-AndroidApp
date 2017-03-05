@@ -12,9 +12,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.pautena.hackupc.R;
+import com.pautena.hackupc.entities.VideoRoom;
 import com.pautena.hackupc.ui.twillio.activity.VideoActivity;
+
+import io.realm.Realm;
 
 /**
  * Created by pautenavidal on 4/3/17.
@@ -49,9 +53,12 @@ public class PlayingFragment extends Fragment {
         }
     };
 
-    public static PlayingFragment newInstance() {
+    private static final String ARG_VIDEO_ROOM_ID = "argVideoRoomId";
+
+    public static PlayingFragment newInstance(VideoRoom videoRoom) {
 
         Bundle args = new Bundle();
+        args.putString(ARG_VIDEO_ROOM_ID, videoRoom.getId());
 
         PlayingFragment fragment = new PlayingFragment();
         fragment.setArguments(args);
@@ -59,6 +66,7 @@ public class PlayingFragment extends Fragment {
     }
 
     private PlayingFragmentCallback callback = emptyCallback;
+    private Realm realm;
 
     @Override
     public void onAttach(Context context) {
@@ -78,17 +86,28 @@ public class PlayingFragment extends Fragment {
     private SeekBar volumeSeekBar;
     private ImageButton ibVolume;
 
+    private TextView tvVisitors;
+    private VideoRoom videoRoom;
+
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.playing_fragment, container, false);
+        realm = Realm.getDefaultInstance();
+
+        videoRoom = realm.where(VideoRoom.class)
+                .equalTo("id", getArguments().getString(ARG_VIDEO_ROOM_ID)).findFirst();
+
+        setViewers(videoRoom.getViewers());
 
 
         switchCameraActionFab = (FloatingActionButton) view.findViewById(R.id.switch_camera_action_fab);
         localVideoActionFab = (FloatingActionButton) view.findViewById(R.id.local_video_action_fab);
         muteActionFab = (FloatingActionButton) view.findViewById(R.id.mute_action_fab);
         ibVolume = (ImageButton) view.findViewById(R.id.volume_icon);
+
+        tvVisitors = (TextView) view.findViewById(R.id.visitors);
 
 
         initializeAudioSeekBar(view);
@@ -198,5 +217,10 @@ public class PlayingFragment extends Fragment {
 
         ibVolume.setImageResource(resId);
 
+    }
+
+    public void setViewers(int viewers) {
+
+        tvVisitors.setText(Integer.valueOf(viewers));
     }
 }

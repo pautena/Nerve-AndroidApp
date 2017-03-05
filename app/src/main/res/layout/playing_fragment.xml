@@ -44,30 +44,61 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/volume_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/buttons_layout"
             android:layout_alignParentRight="true"
+            android:layout_below="@+id/buttons_layout"
             android:layout_marginRight="13dp"
+
             android:background="@drawable/slider_volume_background"
-            android:paddingBottom="8dp"
             android:gravity="center_vertical"
+            android:paddingBottom="8dp"
             android:paddingTop="8dp">
 
             <ImageButton
                 android:id="@+id/volume_icon"
-                android:layout_marginLeft="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
                 android:background="@null"
-                android:tint="#9b9b9b"
-                android:src="@drawable/ic_volume_up_black_24px"/>
+                android:src="@drawable/ic_volume_up_black_24px"
+                android:tint="#9b9b9b" />
 
             <SeekBar
                 android:id="@+id/volume_seekBar"
                 android:layout_width="155dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/volume_layout"
+            android:layout_marginRight="13dp"
+            android:layout_marginTop="8dp"
+            android:background="#35000000"
+            android:gravity="center_vertical|right"
+            android:orientation="horizontal"
+            android:padding="4dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_remove_red_eye_black_24px"
+                android:tint="#acaaaa" />
+
+            <TextView
+                android:id="@+id/visitors"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:text="0"
+                android:textColor="@color/md_white_1000" />
+
         </LinearLayout>
     </RelativeLayout>
 
