@@ -2,18 +2,21 @@ package com.pautena.hackupc.ui.twillio.activity;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.RelativeLayout;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +32,6 @@ import com.pautena.hackupc.entities.manager.UserManager;
 import com.pautena.hackupc.services.ApiServiceAdapter;
 import com.pautena.hackupc.services.callback.CreateRoomCallback;
 import com.pautena.hackupc.services.callback.RequestJoinCallback;
-import com.pautena.hackupc.ui.customview.CameraPreview;
 import com.pautena.hackupc.ui.twillio.customviews.MyPrimaryVideoView;
 import com.pautena.hackupc.ui.twillio.customviews.MyThumbnailVideoView;
 import com.pautena.hackupc.ui.twillio.fragments.PlayingFragment;
@@ -39,11 +41,15 @@ import com.pautena.hackupc.ui.twillio.fragments.SongSelectionFragment;
 import com.pautena.hackupc.ui.twillio.fragments.StartOrJoinFragment;
 import com.pautena.hackupc.ui.twillio.fragments.WaitForStartFragment;
 import com.pautena.hackupc.ui.twillio.listeners.MeteorListener;
-import com.pautena.hackupc.ui.twillio.utils.ViewCapturer;
 import com.pautena.hackupc.utils.SongPlayer;
 import com.plattysoft.leonids.ParticleSystem;
+import com.twilio.video.RoomState;
+import com.twilio.video.VideoRenderer;
+import com.twilio.video.TwilioException;
+import com.pautena.hackupc.ui.twillio.dialog.Dialog;
 import com.twilio.video.AudioTrack;
 import com.twilio.video.CameraCapturer;
+import com.twilio.video.CameraCapturer.CameraSource;
 import com.twilio.video.ConnectOptions;
 import com.twilio.video.LocalAudioTrack;
 import com.twilio.video.LocalMedia;
@@ -51,23 +57,23 @@ import com.twilio.video.LocalVideoTrack;
 import com.twilio.video.Media;
 import com.twilio.video.Participant;
 import com.twilio.video.Room;
-import com.twilio.video.RoomState;
-import com.twilio.video.TwilioException;
 import com.twilio.video.VideoClient;
-import com.twilio.video.VideoRenderer;
 import com.twilio.video.VideoTrack;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import im.delight.android.ddp.Meteor;
+import im.delight.android.ddp.MeteorCallback;
 import im.delight.android.ddp.MeteorSingleton;
+import im.delight.android.ddp.db.Document;
+import im.delight.android.ddp.db.memory.InMemoryDatabase;
 import io.realm.Realm;
 
 public class VideoActivity extends AppCompatActivity implements SongSelectionFragment.SongSelectionCallback,
         SelectFriendFragment.SelectFriendFragmentCallback, StartOrJoinFragment.StartOrJoinFragmentCallback,
         WaitForStartFragment.WaitForStartCallback, PlayingFragment.PlayingFragmentCallback,
-        RequestFragment.RequestFragmentCallback, SongPlayer.SongPlayerListener {
+        RequestFragment.RequestFragmentCallback {
     private static final int CAMERA_MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "VideoActivity";
 
@@ -130,9 +136,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
     private WaitForStartFragment waitForStartFragment;
     private PlayingFragment playingFragment;
     private RequestFragment requestFragment;
-    private RelativeLayout rootContainer;
-    private FrameLayout preview;
-    private CameraPreview mPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,14 +148,9 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         primaryVideoView = (MyPrimaryVideoView) findViewById(R.id.primary_video_view);
         songPlayer = new SongPlayer(this, primaryVideoView);
-        songPlayer.setListener(this);
         thumbnailVideoView = (MyThumbnailVideoView) findViewById(R.id.thumbnail_video_view);
         videoStatusTextView = (TextView) findViewById(R.id.video_status_textview);
-        rootContainer = (RelativeLayout) findViewById(R.id.video_container);
 
-        mPreview = new CameraPreview(this);
-        preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(mPreview);
 
         /*
          * Enable changing the volume using the up/down keys during a conversation
@@ -177,23 +175,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         /*
         Connect to meteor database
          */
-        meteorConfig();
-
-        //Show start fragment
-        showStartFragment();
-
-        /*Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                rainConfetti();
-                //rainSnow();
-
-            }
-        }, 1000);*/
-    }
-
-    private void meteorConfig() {
         // create a new instance
         mMeteor = MeteorSingleton.getInstance();
 
@@ -202,6 +183,9 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
         // establish the connection
         mMeteor.connect();
+
+        //Show start fragment
+        showStartFragment();
     }
 
     @Override
@@ -251,7 +235,6 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localMedia.removeVideoTrack(localVideoTrack);
             localVideoTrack = null;
         }
-        stopSing();
         super.onPause();
     }
 
@@ -306,10 +289,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         localAudioTrack = localMedia.addAudioTrack(true);
 
         // Share your camera
-        cameraCapturer = new CameraCapturer(this, CameraCapturer.CameraSource.FRONT_CAMERA);
+        cameraCapturer = new CameraCapturer(this, CameraSource.FRONT_CAMERA);
         localVideoTrack = localMedia.addVideoTrack(true, cameraCapturer);
-
-
         primaryVideoView.setMirror(true);
         localVideoTrack.addRenderer(primaryVideoView);
         localVideoView = primaryVideoView;
@@ -382,6 +363,10 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
          * This app only displays video for one additional participant per Room
          */
         if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
+            Snackbar.make(this.primaryVideoView,
+                    "Multiple participants are not currently support in this UI",
+                    Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
             return;
         }
         participantIdentity = participant.getIdentity();
@@ -415,7 +400,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             localVideoTrack.removeRenderer(primaryVideoView);
             localVideoTrack.addRenderer(thumbnailVideoView);
             localVideoView = thumbnailVideoView;
-            //TODO: thumbnailVideoView.setMirror(cameraCapturer.getCameraSource() == CameraSource.FRONT_CAMERA);
+            thumbnailVideoView.setMirror(cameraCapturer.getCameraSource() ==
+                    CameraSource.FRONT_CAMERA);
         }
     }
 
@@ -448,7 +434,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             thumbnailVideoView.setVisibility(View.GONE);
             localVideoTrack.addRenderer(primaryVideoView);
             localVideoView = primaryVideoView;
-            //TODO primaryVideoView.setMirror(cameraCapturer.getCameraSource() == CameraSource.FRONT_CAMERA);
+            primaryVideoView.setMirror(cameraCapturer.getCameraSource() ==
+                    CameraSource.FRONT_CAMERA);
         }
     }
 
@@ -684,7 +671,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         this.song = song;
 
 
-        ApiServiceAdapter.getInstance(this).createRoom(song, user.getUsername(), new CreateRoomCallback() {
+        ApiServiceAdapter.getInstance(this).createRoom(song, user.getId(), new CreateRoomCallback() {
 
 
             @Override
@@ -727,27 +714,13 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onStartSing() {
-        Log.d(TAG, "onStartSing. roomId: " + videoRoom.getId());
+        Log.d(TAG, "onStartSing");
 
         Map<String, Object> query = new HashMap<>();
         query.put("_id", videoRoom.getId());
 
         Map<String, Object> values = new HashMap<>();
-        values.put("started", true);
-
-        Map<String, Object> set = new HashMap<>();
-        set.put("$set", values);
-
-        mMeteor.update("rooms", query, set);
-
-    }
-
-    public void stopSing() {
-        Map<String, Object> query = new HashMap<>();
-        query.put("_id", videoRoom.getId());
-
-        Map<String, Object> values = new HashMap<>();
-        values.put("started", false);
+        values.put("start", "true");
 
         Map<String, Object> set = new HashMap<>();
         set.put("$set", values);
@@ -757,7 +730,7 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
 
     @Override
     public void onSwitchCamera() {
-        /*TODO if (cameraCapturer != null) {
+        if (cameraCapturer != null) {
             CameraSource cameraSource = cameraCapturer.getCameraSource();
             cameraCapturer.switchCamera();
             if (thumbnailVideoView.getVisibility() == View.VISIBLE) {
@@ -765,9 +738,8 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
             } else {
                 primaryVideoView.setMirror(cameraSource == CameraSource.BACK_CAMERA);
             }
-        }*/
+        }
     }
-
 
     @Override
     public boolean localVideo() {
@@ -830,22 +802,10 @@ public class VideoActivity extends AppCompatActivity implements SongSelectionFra
         showWaitForStartFragment(master);
     }
 
-
     public void setViewers(int viewers) {
-        if (videoRoom != null) {
-            realm.beginTransaction();
-            videoRoom.setViewers(viewers);
-            realm.commitTransaction();
-
-            if (playingFragment != null) {
-                playingFragment.setViewers(viewers);
-            }
+        if(playingFragment!=null){
+            playingFragment.setViewers(viewers);
         }
-    }
-
-    @Override
-    public void onFinishSong() {
-        stopSing();
     }
 
     public void onUpdateVotes(int vote, int nVotes) {
